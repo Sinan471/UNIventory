@@ -1,0 +1,16 @@
+5 Other Nonfunctional Requirements
+These requirements apply across the features in Section 4. Safety, access, data integrity and recovery requirements are High priority. AI quality, reporting, usability and accessibility are Medium priority unless stated otherwise. Measurements below are acceptance targets, not reported test results.
+5.1 Performance Requirements
+ID
+Requirement and Measurement
+NFR-01
+Ordinary catalogue search, filtering and list pages shall respond within 2 seconds at the 95th percentile with 20 concurrent signed-in users and 1,000 assets. Measure at least 200 requests after warm-up on the recorded reference host; exclude external identity and AI time and report error rate separately.
+NFR-02
+An interactive AI request shall return a result or a clear timeout within 60 seconds. A background report shall finish or return a failure status within 5 minutes. Show progress and retries shall not duplicate any business operation.
+NFR-03
+In-app event notices shall be visible within 60 seconds of a committed event under the NFR-01 workload. Expired reservation holds will be released within 60 seconds of their expiry. A request for already-expired stock will recheck the hold before allocation.
+NFR-04
+The system shall handle 20 simultaneous attempts to reserve the same last unit with exactly one successful hold, no negative balance and clear failure 
+
+messages. Repeating a receipt or final-action confirmation shall apply its quantity and impact once.
+
