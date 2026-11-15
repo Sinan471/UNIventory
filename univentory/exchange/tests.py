@@ -70,3 +70,13 @@ class TransferTests(TestCase):
         self.assertEqual(self.client.get(reverse("transfer:detail", args=[reservation.pk])).status_code, 404)
         self.client.force_login(self.w.rep)
         self.assertEqual(self.client.get(reverse("transfer:detail", args=[reservation.pk])).status_code, 200)
+
+    def test_cancel_hold_releases_stock_and_reject_records_reason(self):
+        row = ReservationService.request(self.w.requester, self.need.pk, self.listing.pk, 1)
+        rejected = ReservationService.reject(self.w.rep, row.pk, row.version, "Unavailable")
+        self.assertEqual(rejected.state_reason, "Unavailable")
+        row = ReservationService.request(self.w.requester, self.need.pk, self.listing.pk, 2)
+        row = ReservationService.approve(self.w.rep, row.pk, row.version)
+        row = ReservationService.cancel(self.w.requester, row.pk, row.version, "No longer needed")
+        self.assertEqual(row.state, Reservation.State.RELEASED)
+        self.assertFalse(AssetPortion.objects.filter(claim_ref=row.claim_ref, allocation=Allocation.HELD).exists())

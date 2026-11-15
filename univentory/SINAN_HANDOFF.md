@@ -20,7 +20,7 @@ Run `python manage.py run_work` regularly through a supervised scheduler. It pro
 ## Still needed
 
 - A complete review of request expiry, request revisions, quantity balances, repeat submissions, permission changes and all required approval stages.
-- Reservation rejection and cancellation, complete concurrency testing on PostgreSQL, and end-to-end testing of multiple partial deliveries and discrepancy resolution.
+- Complete concurrency testing on PostgreSQL, and end-to-end testing of reservation rejection, cancellation, multiple partial deliveries and discrepancy resolution. Cancellation of a committed reservation is currently blocked after any dispatch.
 - Full inspection, maintenance and expenditure decisions, with a documented cost-service handoff and broader exception testing.
 - Component recovery with linked child assets, retirement, specialist safety and data-clearing reviews, final-action cancellation, corrections and full evidence handling. Data-bearing, hazardous and regulated assets are currently blocked from the limited final-action flow.
 - Full audit immutability at the database level, denied-attempt handling outside rolled-back transactions, audit scope for departmental auditors and delivery of all required notifications.

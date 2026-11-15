@@ -89,6 +89,43 @@ class ReservationService:
         audit("reservation.expire", row, actor, after={"state": row.state})
         return True
 
+    @staticmethod
+    @transaction.atomic
+    def reject(user, reservation_id, expected_version, reason):
+        row = Reservation.objects.select_for_update().select_related("listing").get(pk=reservation_id)
+        if not AccessPolicy.has_role(user, Role.DEPT_REP, row.listing.department_id) or user.pk == row.requested_by_id:
+            raise NotPermitted("An independent source department representative must review this reservation.")
+        if row.version != expected_version:
+            raise StaleVersion()
+        if row.state != Reservation.State.PENDING or not reason.strip():
+            raise ValidationFailed("A pending reservation and a reason are required.")
+        row.state, row.version, row.state_reason = Reservation.State.REJECTED, row.version + 1, reason.strip()
+        row.save(update_fields=["state", "version", "state_reason"])
+        audit("reservation.reject", row, user, after={"state": row.state}, reason=reason)
+        from notifications.services import NotificationService
+        NotificationService.notify(row.requested_by, "A reservation was rejected. Open reservations and transfers for details.")
+        return row
+
+    @staticmethod
+    @transaction.atomic
+    def cancel(user, reservation_id, expected_version, reason):
+        row = Reservation.objects.select_for_update().select_related("request").get(pk=reservation_id)
+        if user.pk != row.requested_by_id or not AccessPolicy.has_role(user, Role.REQUESTER, row.request.department_id):
+            raise NotPermitted("Only the requester can cancel this reservation.")
+        if row.version != expected_version:
+            raise StaleVersion()
+        if row.state not in (Reservation.State.PENDING, Reservation.State.HELD, Reservation.State.COMMITTED) or not reason.strip():
+            raise ValidationFailed("An active reservation and a reason are required.")
+        if row.state == Reservation.State.COMMITTED and row.consignments.exists():
+            raise ValidationFailed("Dispatched quantities must be resolved before this reservation can be cancelled.")
+        actor = ActorContext(user, operation_key=f"cancel-reservation:{row.pk}:{row.version}")
+        if row.state in (Reservation.State.HELD, Reservation.State.COMMITTED):
+            InventoryLedger.release_claim(actor, claim_ref=row.claim_ref, reason=reason.strip())
+        row.state, row.version, row.state_reason = Reservation.State.RELEASED, row.version + 1, reason.strip()
+        row.save(update_fields=["state", "version", "state_reason"])
+        audit("reservation.cancel", row, actor, after={"state": row.state}, reason=reason)
+        return row
+
 
 class TransferService:
     @staticmethod

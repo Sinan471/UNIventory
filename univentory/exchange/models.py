@@ -10,11 +10,13 @@ class Reservation(models.Model):
         COMMITTED = "COMMITTED", "Committed"
         EXPIRED = "EXPIRED", "Expired"
         REJECTED = "REJECTED", "Rejected"
+        RELEASED = "RELEASED", "Released"
 
     request = models.ForeignKey("demand.ResourceRequest", on_delete=models.PROTECT, related_name="reservations")
     listing = models.ForeignKey("catalogue.Listing", on_delete=models.PROTECT)
     quantity = models.DecimalField(max_digits=12, decimal_places=3)
     state = models.CharField(max_length=20, choices=State.choices, default=State.PENDING)
+    state_reason = models.TextField(blank=True)
     requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT, related_name="+")
     expires_at = models.DateTimeField(null=True)

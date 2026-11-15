@@ -57,15 +57,19 @@ def detail(request, pk):
     if request.method == "POST":
         action = request.POST.get("action")
         try:
-            if action in ("hold", "commit"):
+            if action in ("hold", "commit", "reject", "cancel"):
                 try:
                     version = int(request.POST.get("version", ""))
                 except ValueError:
                     return render(request, "core/error.html", {"status": 400}, status=400)
                 if action == "hold":
                     ReservationService.approve(request.user, pk, version)
-                else:
+                elif action == "commit":
                     ReservationService.commit(request.user, pk, version)
+                elif action == "reject":
+                    ReservationService.reject(request.user, pk, version, request.POST.get("reason", ""))
+                else:
+                    ReservationService.cancel(request.user, pk, version, request.POST.get("reason", ""))
             elif action == "dispatch" and form.is_valid():
                 TransferService.dispatch(request.user, pk, operation_key=operation_key, **form.cleaned_data)
             else:
