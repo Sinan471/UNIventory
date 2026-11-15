@@ -1,0 +1,12 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'demand:list' %}">My requests</a> / {{ item.title }}</nav>
+<div class="page-head"><div><h1>{{ item.title }}</h1><p>{{ item.get_state_display }} · {{ item.department }}</p></div>{% if item.state == 'DRAFT' or item.state == 'RETURNED' %}<a class="button" href="{% url 'demand:edit' item.pk %}">Edit request</a>{% endif %}</div>
+<section class="fieldset-card"><h2>Need</h2><p>{{ item.purpose|linebreaksbr }}</p><p><strong>Quantity:</strong> {{ item.quantity }}</p><p><strong>Needed by:</strong> {{ item.needed_by|default:"Not specified" }}</p>{% if item.specifications %}<p><strong>Specifications:</strong> {{ item.specifications }}</p>{% endif %}{% if item.urgent %}<p><strong>Urgent:</strong> {{ item.urgent_reason }}</p>{% endif %}{% if item.listing %}<p><strong>Related listing:</strong> {{ item.listing.title }}</p>{% endif %}</section>
+<p>Accepted: {{ item.accepted_quantity }} · Outstanding: {{ item.outstanding_quantity }}</p>
+{% if item.state == 'APPROVED' or item.state == 'PARTIAL' %}{% if item.listing %}<p><a class="button button-primary" href="{% url 'transfer:reserve' item.pk %}">Request reservation</a></p>{% endif %}{% endif %}<p><a href="{% url 'transfer:queue' %}">View reservations and transfers</a></p>
+<section class="fieldset-card"><h2>History</h2><ol>{% for event in item.events.all %}<li>{{ event.occurred_at|date:"d M Y H:i" }} — {{ event.action }} by {{ event.actor.display_name }}</li>{% endfor %}</ol></section>
+{% if item.decisions.all %}<section class="fieldset-card"><h2>Review decisions</h2>{% for decision in item.decisions.all %}<p>{{ decision.decided_at|date:"d M Y H:i" }} — {{ decision.decision }} by {{ decision.actor.display_name }}{% if decision.reason %}: {{ decision.reason }}{% endif %}</p>{% endfor %}</section>{% endif %}
+{% if item.state == 'DRAFT' or item.state == 'SUBMITTED' or item.state == 'RETURNED' %}<form method="post" action="{% url 'demand:cancel' item.pk %}">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}"><button class="button" type="submit">Cancel request</button></form>{% endif %}
+{% endblock %}

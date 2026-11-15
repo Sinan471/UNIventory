@@ -1,0 +1,6 @@
+{% extends "shared/base.html" %}{% block title %}Review request{% endblock %}{% block content %}
+<nav class="breadcrumb"><a href="{% url 'workflow:queue' %}">Approvals</a> / Review</nav><h1>{{ item.title }}</h1><p>{{ item.requester.display_name }} · {{ item.department }} · {{ item.get_state_display }}</p>
+<section class="fieldset-card"><h2>Need</h2><p>{{ item.purpose|linebreaksbr }}</p><p>Quantity: {{ item.quantity }}</p><p>Specifications: {{ item.specifications|default:"Not specified" }}</p><p>Needed by: {{ item.needed_by|default:"Not specified" }}</p>{% if item.urgent %}<p>Urgent: {{ item.urgent_reason }}</p>{% endif %}</section>
+{% if domain_error %}<div class="alert alert-error" role="alert">{{ domain_error.message }}</div>{% endif %}
+{% if item.state == 'SUBMITTED' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}"><label for="reason">Reason (required to return or reject)</label><textarea id="reason" name="reason" rows="3">{{ request.POST.reason }}</textarea><p><button class="button button-primary" name="decision" value="approve">Approve need</button> <button class="button" name="decision" value="return">Return for revision</button> <button class="button" name="decision" value="reject">Reject</button></p></form>{% endif %}
+{% endblock %}

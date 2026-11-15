@@ -1,0 +1,12 @@
+{% extends "shared/base.html" %}
+{% block title %}{% if item %}Edit request{% else %}New request{% endif %}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'demand:list' %}">My requests</a> / {% if item %}Edit{% else %}New{% endif %}</nav>
+<div class="page-head"><div><h1>{% if item %}Edit request{% else %}Record a need{% endif %}</h1><p>Submitting a request does not reserve an item.</p></div></div>
+{% if listing %}<p>Related listing: {{ listing.title }}</p>{% endif %}
+{% if domain_error %}<div class="alert alert-error" role="alert">{{ domain_error.message }}</div>{% endif %}
+<form method="post" novalidate>{% csrf_token %}{{ form.version }}{{ form.operation_key }}
+<fieldset class="fieldset-card"><legend>Request details</legend><div class="form-grid">{% for field in form.visible_fields %}{% include "shared/components/field.html" %}{% endfor %}</div></fieldset>
+<button class="button" type="submit" name="action" value="draft">Save draft</button> <button class="button button-primary" type="submit" name="action" value="submit">Submit for approval</button>
+</form>
+{% endblock %}

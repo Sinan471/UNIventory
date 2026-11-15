@@ -1,0 +1,8 @@
+{% extends "shared/base.html" %}
+{% block title %}My requests{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>My requests</h1><p>Track the needs you have recorded.</p></div><a class="button button-primary" href="{% url 'demand:new' %}">New request</a></div>
+{% if items %}<div class="table-wrap"><table><thead><tr><th>Request</th><th>Department</th><th>Quantity</th><th>Status</th><th>Created</th></tr></thead><tbody>
+{% for item in items %}<tr><td><a href="{% url 'demand:detail' item.pk %}">{{ item.title }}</a></td><td>{{ item.department }}</td><td>{{ item.quantity }}</td><td>{{ item.get_state_display }}</td><td>{{ item.created_at|date:"d M Y" }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p>You have no requests yet.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,2 @@
+{% extends "shared/base.html" %}{% block title %}Notifications{% endblock %}{% block content %}<h1>Notifications</h1>
+{% for item in items %}<section class="fieldset-card"><p>{{ item.message }}</p><p>{{ item.created_at }} · {% if item.read_at %}Read{% else %}Unread{% endif %}</p>{% if not item.read_at %}<form method="post" action="{% url 'notifications:read' item.pk %}">{% csrf_token %}<button class="button">Mark as read</button></form>{% endif %}</section>{% empty %}<p>You have no notifications.</p>{% endfor %}{% endblock %}

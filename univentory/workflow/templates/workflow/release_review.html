@@ -1,0 +1,6 @@
+{% extends "shared/base.html" %}{% block title %}Review listing release{% endblock %}{% block content %}
+<nav class="breadcrumb"><a href="{% url 'workflow:queue' %}">Approvals</a> / Listing release</nav>
+<h1>Release {{ review.listing.title }}</h1><p>{{ review.listing.department }} · Requested by {{ review.requested_by.display_name }}</p>
+<section class="fieldset-card"><p>{{ review.listing.public_description }}</p><p>Offered quantity: {{ review.listing.offered_quantity }}</p><p>Collection: {{ review.listing.collection_info }}</p></section>
+{% if domain_error %}<div class="alert alert-error" role="alert">{{ domain_error.message }}</div>{% endif %}
+{% if review.status == 'pending' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ review.listing_version }}"><label for="reason">Reason (required to return or reject)</label><textarea id="reason" name="reason" rows="3">{{ request.POST.reason }}</textarea><p><button class="button button-primary" name="decision" value="approved">Approve release</button> <button class="button" name="decision" value="returned">Return</button> <button class="button" name="decision" value="rejected">Reject</button></p></form>{% endif %}{% endblock %}
