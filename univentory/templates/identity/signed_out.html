@@ -1,0 +1,10 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{% trans "Signed out" %}{% endblock %}
+{% block shell %}
+<main id="main" class="state-page" style="padding:0 var(--gutter)">
+  <div class="code" aria-hidden="true">{% icon "check-circle" %}</div>
+  <h1>{% trans "You have signed out" %}</h1>
+  <p class="muted">{% trans "Your UNIventory session has ended. On a shared computer, close the browser to end your university session too." %}</p>
+  <a class="btn btn-primary" href="{% url 'identity:login' %}">{% trans "Sign in again" %}</a>
+</main>
+{% endblock %}

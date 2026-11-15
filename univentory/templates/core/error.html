@@ -1,0 +1,24 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{% if status == 404 %}{% trans "Not found" %}{% elif status == 403 %}{% trans "Not permitted" %}{% elif status == 409 %}{% trans "Changed by someone else" %}{% else %}{% trans "Something went wrong" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="state-page">
+  <div class="code" aria-hidden="true">{{ status }}</div>
+  {% if status == 404 %}
+    <h1>{% trans "This page is not available" %}</h1>
+    <p class="muted">{% trans "The record does not exist, or it is not available to your account." %}</p>
+  {% elif status == 403 %}
+    <h1>{% trans "You don't have permission for this" %}</h1>
+    <p class="muted">{% if message %}{{ message }}{% else %}{% trans "Your current role and department do not allow this action. Nothing was changed." %}{% endif %}</p>
+  {% elif status == 409 %}
+    <h1>{% trans "The record changed" %}</h1>
+    <p class="muted">{{ message }}</p>
+  {% else %}
+    <h1>{% trans "Something went wrong" %}</h1>
+    <p class="muted">{% if message %}{{ message }}{% else %}{% trans "No change was saved. Try again, and contact support if it keeps happening." %}{% endif %}</p>
+  {% endif %}
+  {% if next_action %}<p>{{ next_action }}</p>{% endif %}
+  <div class="button-row" style="justify-content:center">
+    <a class="btn btn-primary" href="{% url 'core:home' %}">{% trans "Go to my start page" %}</a>
+  </div>
+</div>
+{% endblock %}

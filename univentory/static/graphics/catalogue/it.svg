@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" role="img" aria-hidden="true" class="illustration">
+<title>IT equipment</title>
+<path d="M120 150 30 120l90-30 90 30z" fill="#E6E1D5"/><path d="M30 120v8l90 30v-8z" fill="#D6CFBE"/><path d="M210 120v8l-90 30v-8z" fill="#CBC3B0"/>
+
+<path d="M78 128 120 142l42-14-42-14z" fill="#102A43"/>
+<path d="M88 60l64-20v62l-64 20z" fill="#102A43"/>
+<path d="M93 64l54-17v52l-54 17z" fill="#146C60"/>
+<path d="M100 74l38-12M100 84l30-9M100 94l40-12" stroke="#E3F1EE" stroke-width="4" stroke-linecap="round"/>
+<path d="M112 122v8l16-5v-8z" fill="#2E5E7E"/>
+<rect x="150" y="110" width="22" height="8" rx="2" transform="skewY(-18)" fill="#C98A1B"/>
+</svg>

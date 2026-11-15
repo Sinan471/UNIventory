@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" role="img" aria-hidden="true" class="illustration">
+<title>Tools and workshop</title>
+<path d="M120 150 30 120l90-30 90 30z" fill="#E6E1D5"/><path d="M30 120v8l90 30v-8z" fill="#D6CFBE"/><path d="M210 120v8l-90 30v-8z" fill="#CBC3B0"/>
+
+<path d="M78 112 120 126l44-15-42-14z" fill="#102A43"/>
+<path d="M78 112v10l42 14v-10z" fill="#0A1C2E"/><path d="M164 111v10l-44 15v-10z" fill="#13314D"/>
+<path d="M96 66a14 14 0 0 0 17 17l20 20-8 8-20-20a14 14 0 0 0-17-17l7 7 7-2 2-7z" fill="#146C60"/>
+<rect x="138" y="62" width="10" height="44" rx="3" transform="rotate(28 143 84)" fill="#C98A1B"/>
+<rect x="132" y="56" width="22" height="12" rx="3" transform="rotate(28 143 62)" fill="#2E5E7E"/>
+</svg>

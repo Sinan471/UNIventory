@@ -1,0 +1,10 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{% trans "No access yet" %}{% endblock %}
+{% block content %}
+<div class="state-page">
+  <div class="code" aria-hidden="true">{% icon "lock" %}</div>
+  <h1>{% trans "Your account has no UNIventory role yet" %}</h1>
+  <p class="muted">{% trans "You signed in successfully, but a system administrator has not assigned you a role and department. No records are shown until they do." %}</p>
+  <form method="post" action="{% url 'identity:logout' %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">{% trans "Sign out" %}</button></form>
+</div>
+{% endblock %}

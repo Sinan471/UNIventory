@@ -1,0 +1,19 @@
+# systemd unit for the web process (owner: Jesher).
+# The background worker is a second unit running the SAME release with
+# Sinan's worker command (jobs module); it is added when that command exists.
+[Unit]
+Description=UNIventory web (gunicorn)
+After=network.target postgresql.service
+
+[Service]
+User=univentory
+Group=univentory
+WorkingDirectory=/srv/univentory/app/univentory
+EnvironmentFile=/etc/univentory/univentory.env
+ExecStart=/srv/univentory/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 4 --timeout 75 --access-logfile -
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

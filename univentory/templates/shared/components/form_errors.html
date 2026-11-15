@@ -1,0 +1,15 @@
+{% load i18n ui %}
+{% if form.non_field_errors or domain_error %}
+<div class="alert alert-error" role="alert" tabindex="-1" id="form-errors">
+  {% icon "alert" %}
+  <div>
+    <strong>{% if domain_error %}{{ domain_error.message }}{% else %}{% trans "Please correct the problems below." %}{% endif %}</strong>
+    {% if form.non_field_errors %}<ul>{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    {% if domain_error.next_action %}<p class="mb-0 mt-2">{{ domain_error.next_action }}</p>{% endif %}
+  </div>
+</div>
+{% elif form.errors %}
+<div class="alert alert-error" role="alert" tabindex="-1" id="form-errors">
+  {% icon "alert" %}<div><strong>{% trans "Please correct the highlighted fields. Your other entries were kept." %}</strong></div>
+</div>
+{% endif %}

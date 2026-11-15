@@ -1,0 +1,61 @@
+{% extends "shared/base.html" %}{% load i18n static ui %}
+{% block title %}{% trans "My Assets" %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{% trans "Inventory work" %}</span><h1>{% trans "My Assets" %}</h1></div>
+  {% if can_register %}<div class="actions"><a class="btn btn-primary" href="{% url 'inventory:asset_new' %}">{% icon "plus" %} {% trans "Register asset" %}</a></div>{% endif %}
+</div>
+
+<form method="get" class="search-bar" role="search" style="flex-wrap:wrap">
+  <label class="visually-hidden" for="id_q">{% trans "Search my assets" %}</label>
+  <div style="flex:2;min-width:220px">{{ form.q }}</div>
+  <label class="visually-hidden" for="id_lifecycle">{% trans "Life-cycle state" %}</label>
+  <div style="flex:1;min-width:180px">{{ form.lifecycle }}</div>
+  <button class="btn btn-secondary" type="submit">{% icon "search" %} {% trans "Search" %}</button>
+</form>
+
+{% if rows %}
+<div class="table-wrap">
+  <table class="data">
+    <caption class="visually-hidden">{% trans "Assets you are responsible for" %}</caption>
+    <thead>
+      <tr>
+        <th scope="col">{% trans "Asset" %}</th>
+        <th scope="col">{% trans "Location" %}</th>
+        <th scope="col">{% trans "Life-cycle" %}</th>
+        <th scope="col" class="num">{% trans "Total" %}</th>
+        <th scope="col" class="num">{% trans "Free" %}</th>
+        <th scope="col">{% trans "Listing" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td>
+          <a class="row-title" href="{% url 'inventory:asset_detail' row.asset.pk %}">{{ row.asset.title }}</a>
+          <div class="small muted"><span class="asset-code">{{ row.asset.asset_code }}</span> · {{ row.asset.category }} · {{ row.asset.get_tracking_type_display }}</div>
+        </td>
+        <td>{{ row.asset.location.name }}<div class="small muted">{{ row.asset.department.code }}</div></td>
+        <td><div class="flex wrap">{% for s in row.states %}{% lifecycle_badge s %}{% empty %}{% trans "Draft" as l %}{% tone_badge "neutral" l %}{% endfor %}</div></td>
+        <td class="num">{{ row.summary.total|qty:row.asset }} <span class="muted small">{{ row.asset|unit_label }}</span></td>
+        <td class="num">{{ row.summary.free|qty:row.asset }}</td>
+        <td>{% if row.listing %}<a href="{% url 'catalogue:listing_detail' row.listing.pk %}">{% listing_badge row.listing %}</a>{% else %}<span class="muted small">{% trans "Not listed" %}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "shared/components/pagination.html" %}
+{% else %}
+  {% static 'graphics/catalogue/office.svg' as art %}
+  {% trans "No assets in your scope yet" as heading %}
+  {% trans "Assets you are the custodian of, or that belong to departments you represent, appear here." as body %}
+  {% url 'inventory:asset_new' as new_url %}
+  {% trans "Register the first asset" as action_label %}
+  {% if can_register %}
+    {% include "shared/components/empty_state.html" with art=art heading=heading body=body action_url=new_url action_label=action_label %}
+  {% else %}
+    {% include "shared/components/empty_state.html" with art=art heading=heading body=body %}
+  {% endif %}
+{% endif %}
+{% endblock %}

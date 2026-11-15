@@ -1,0 +1,92 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{% if asset %}{% trans "Edit" %} {{ asset.asset_code }}{% else %}{% trans "Register asset" %}{% endif %}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'inventory:my_assets' %}">{% trans "My Assets" %}</a> / {% if asset %}<a href="{% url 'inventory:asset_detail' asset.pk %}">{{ asset.asset_code }}</a> / {% trans "Edit" %}{% else %}{% trans "Register" %}{% endif %}</nav>
+<div class="page-head">
+  <div>
+    <h1>{% if asset %}{% trans "Edit" %} {{ asset.title }}{% else %}{% trans "Register an asset" %}{% endif %}</h1>
+    <span class="muted small">{% trans "Fields marked * are required. Unknown purchase dates and values must be marked Unknown, not guessed." %}</span>
+  </div>
+</div>
+
+{% if stale %}
+<div class="alert alert-warning" role="alert">{% icon "alert" %}<div><strong>{% trans "Someone else changed this record after you opened it." %}</strong>
+  <p class="mb-0">{% trans "Your changes were not saved and nothing was overwritten." %} <a href="{% url 'inventory:asset_edit' asset.pk %}">{% trans "Reload the current version" %}</a></p></div></div>
+{% else %}
+{% include "shared/components/form_errors.html" %}
+{% endif %}
+
+<form method="post" novalidate id="asset-form">
+  {% csrf_token %}
+  {{ form.operation_key }}{{ form.version }}
+  <div class="grid-2">
+    <div>
+      {% for title, fields in form.grouped %}
+      <fieldset class="fieldset-card">
+        <legend>{{ title }}</legend>
+        <div class="form-grid">
+          {% for field in fields %}
+            {% if field.name == "description" or field.name == "tracking_type" or field.name == "restriction_notes" or field.name == "handling_notes" %}
+              {% include "shared/components/field.html" with span=True %}
+            {% elif field.name == "category" %}
+              <div class="field{% if field.errors %} has-error{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}<span class="required" aria-hidden="true">*</span></label>
+                <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" data-category-select required>
+                  <option value="">{% trans "Choose a category" %}</option>
+                  {% for c in categories %}<option value="{{ c.pk }}" {% if field.value|stringformat:"s" == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+                </select>
+                {% for error in field.errors %}<span class="error" role="alert">{% icon "alert" "icon-sm" %} {{ error }}</span>{% endfor %}
+              </div>
+            {% elif field.name == "subcategory" %}
+              <div class="field{% if field.errors %} has-error{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <input type="text" name="{{ field.html_name }}" id="{{ field.id_for_label }}" value="{{ field.value|default_if_none:'' }}" list="subcategory-options" maxlength="80">
+                <datalist id="subcategory-options"></datalist>
+                {% for error in field.errors %}<span class="error" role="alert">{% icon "alert" "icon-sm" %} {{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              {% include "shared/components/field.html" %}
+            {% endif %}
+            {% if field.name == "quantity" %}<p class="help span-2 mb-0" id="qty-individual-note" hidden>{% trans "Individually tracked equipment always has quantity one." %}</p>{% endif %}
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% endfor %}
+
+      <fieldset class="fieldset-card">
+        <legend>{% trans "Specifications" %}</legend>
+        <p class="muted small" data-spec-none>{% trans "This category has no structured specification fields." %}</p>
+        {% for category, names in form.spec_groups %}
+          <div class="form-grid" data-spec-group="{{ category.pk }}">
+            <p class="small muted span-2 mb-0">{{ category.name }}</p>
+            {% for field in form %}{% if field.name in names %}{% include "shared/components/field.html" %}{% endif %}{% endfor %}
+          </div>
+        {% endfor %}
+      </fieldset>
+    </div>
+
+    <aside class="stack">
+      <section class="panel">
+        <h2>{% trans "Classification suggestions" %}</h2>
+        {# Mount point for Jessica's ClassificationService review widget (AI-01, AI-02). #}
+        <div data-mount="classification" data-form="asset-form" data-asset="{{ asset.pk|default:'' }}">
+          <p class="muted small mb-0">{% trans "The AI classification assistant is not installed yet. Enter category, tags and description manually; nothing is lost." %}</p>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>{% trans "Before you save" %}</h2>
+        <ul class="small muted" style="padding-inline-start:var(--s-5);margin:0">
+          <li>{% trans "Condition is your observation. It is not a safety clearance." %}</li>
+          <li>{% trans "Restricted, hazardous or data-bearing items need their release and handling conditions recorded." %}</li>
+          <li>{% trans "Add photos and documents from the asset page after saving." %}</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+  <div class="form-actions">
+    <a class="btn btn-secondary" href="{% if asset %}{% url 'inventory:asset_detail' asset.pk %}{% else %}{% url 'inventory:my_assets' %}{% endif %}">{% trans "Cancel" %}</a>
+    <button class="btn btn-primary" type="submit">{% if asset %}{% trans "Save changes" %}{% else %}{% trans "Register asset" %}{% endif %}</button>
+  </div>
+</form>
+{{ subcategories|json_script:"subcategory-data" }}
+{% endblock %}

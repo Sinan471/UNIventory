@@ -1,0 +1,40 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% url 'identity:reference_new' kind as new_url %}
+{% trans "Add" as add_label %}
+{% include "identity/_admin_tabs.html" with heading=title active=kind action_url=new_url action_label=add_label %}
+<div class="results-head">
+  <span class="count">{{ rows|length }} {% if show == "all" %}{% trans "records" %}{% else %}{% trans "active" %}{% endif %}</span>
+  <div class="tools">
+    {% if show == "all" %}<a class="btn btn-ghost btn-sm" href="?show=active">{% trans "Show active only" %}</a>
+    {% else %}<a class="btn btn-ghost btn-sm" href="?show=all">{% trans "Include deactivated" %}</a>{% endif %}
+  </div>
+</div>
+<div class="table-wrap">
+  <table class="data">
+    <caption class="visually-hidden">{{ title }}</caption>
+    <thead><tr><th scope="col">{% trans "Code" %}</th><th scope="col">{% trans "Name" %}</th><th scope="col">{% trans "Arabic name" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col"><span class="visually-hidden">{% trans "Actions" %}</span></th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td class="mono">{{ row.code }}</td>
+        <td><a class="row-title" href="{% url 'identity:reference_edit' kind row.pk %}">{{ row.name }}</a>{% if row.building %}<div class="small muted">{{ row.building }}{% if row.room %}, {{ row.room }}{% endif %} · {{ row.campus }}</div>{% endif %}</td>
+        <td lang="ar" dir="rtl">{{ row.name_ar }}</td>
+        <td>{% if row.is_active %}{% trans "Active" as l %}{% tone_badge "success" l %}{% else %}{% trans "Deactivated" as l %}{% tone_badge "neutral" l %}{% endif %}</td>
+        <td>
+          <form method="post" action="{% url 'identity:reference_toggle' kind row.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="active" value="{% if row.is_active %}0{% else %}1{% endif %}">
+            <button class="btn btn-secondary btn-sm" type="submit">{% if row.is_active %}{% trans "Deactivate" %}{% else %}{% trans "Reactivate" %}{% endif %}</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="muted">{% trans "Nothing recorded yet." %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="small muted mt-4">{% trans "Entries that are in use are deactivated rather than deleted. History keeps showing them; they cannot be selected for new records or movements." %}</p>
+{% endblock %}

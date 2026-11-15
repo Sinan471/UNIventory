@@ -1,0 +1,27 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{% trans "People and roles" %}{% endblock %}
+{% block content %}
+{% trans "People and roles" as heading %}
+{% include "identity/_admin_tabs.html" with heading=heading active="people" %}
+<form method="get" class="search-bar" role="search">
+  <label class="visually-hidden" for="id_q">{% trans "Search people" %}</label>
+  {{ form.q }}
+  <button class="btn btn-secondary" type="submit">{% icon "search" %} {% trans "Search" %}</button>
+</form>
+<div class="table-wrap">
+  <table class="data">
+    <caption class="visually-hidden">{% trans "People" %}</caption>
+    <thead><tr><th scope="col">{% trans "Name" %}</th><th scope="col">{% trans "Active roles" %}</th><th scope="col">{% trans "Access" %}</th></tr></thead>
+    <tbody>
+    {% for person in rows %}
+      <tr>
+        <td><a class="row-title" href="{% url 'identity:person_detail' person.pk %}">{{ person.display_name }}</a><div class="small muted">{{ person.email }}</div></td>
+        <td>{% for g in person.role_grants.all %}{% if g.is_active %}<span class="badge badge-neutral">{{ g.role.name }}{% if g.department %} · {{ g.department.code }}{% endif %}</span> {% endif %}{% empty %}<span class="muted">{% trans "No role" %}</span>{% endfor %}</td>
+        <td>{% if person.is_active %}{% trans "Enabled" as l %}{% tone_badge "success" l %}{% else %}{% trans "Disabled" as l %}{% tone_badge "danger" l %}{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="3" class="muted">{% trans "No people match." %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="small muted mt-4">{% trans "Accounts are created at first university sign-in, with no role. Grant a role and department to give access." %}</p>
+{% endblock %}

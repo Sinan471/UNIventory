@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" role="img" aria-hidden="true" class="illustration">
+<title>Office supplies</title>
+<path d="M120 150 30 120l90-30 90 30z" fill="#E6E1D5"/><path d="M30 120v8l90 30v-8z" fill="#D6CFBE"/><path d="M210 120v8l-90 30v-8z" fill="#CBC3B0"/>
+
+<path d="M86 96 126 109l32-11-40-13z" fill="#FFFFFF" stroke="#102A43" stroke-width="3" stroke-linejoin="round"/>
+<path d="M86 104 126 117l32-11" fill="none" stroke="#102A43" stroke-width="3" stroke-linejoin="round"/>
+<path d="M86 112 126 125l32-11" fill="none" stroke="#102A43" stroke-width="3" stroke-linejoin="round"/>
+<path d="M86 96v16M126 109v16M158 98v16" stroke="#102A43" stroke-width="3"/>
+<rect x="100" y="56" width="18" height="34" rx="3" fill="#146C60"/><rect x="122" y="50" width="14" height="40" rx="3" fill="#C98A1B"/>
+<path d="M144 60l10 28" stroke="#102A43" stroke-width="5" stroke-linecap="round"/>
+</svg>

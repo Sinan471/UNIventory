@@ -1,0 +1,117 @@
+{% extends "shared/base.html" %}{% load i18n static ui %}
+{% block title %}{{ listing.title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'catalogue:exchange' %}">{% trans "Exchange" %}</a> / <span class="asset-code">{{ asset.asset_code }}</span></nav>
+<div class="page-head">
+  <div>
+    <span class="eyebrow"><span class="asset-code">{{ asset.asset_code }}</span> · {{ asset.category }}{% if asset.subcategory %} / {{ asset.subcategory }}{% endif %}</span>
+    <h1>{{ listing.title }}</h1>
+  </div>
+  <div class="actions">{% listing_badge listing %}</div>
+</div>
+
+{% if listing.state_reason %}<div class="alert alert-warning">{% icon "info" %}<div>{{ listing.state_reason }}</div></div>{% endif %}
+
+<div class="grid-2">
+  <div class="stack">
+    <div class="gallery">
+      <div class="gallery-main">
+        {% if photos %}<img src="{% evidence_url photos.0 %}" alt="{% blocktrans with t=listing.title %}Photo of {{ t }}{% endblocktrans %}" width="800" height="600">
+        {% else %}<img class="illustration" style="width:45%" src="{% category_art asset.category %}" alt="" width="240" height="200">{% endif %}
+      </div>
+      {% if photos|length > 1 %}
+        <div class="gallery-thumbs">{% for p in photos|slice:"1:" %}<a href="{% evidence_url p %}"><img src="{% evidence_url p %}" alt="{% trans 'Additional photo' %} {{ forloop.counter|add:1 }}" loading="lazy" width="96" height="96"></a>{% endfor %}</div>
+      {% endif %}
+      {% if not photos %}<p class="small muted mb-0">{% trans "No photo provided. The illustration shows the category only and is not condition evidence." %}</p>{% endif %}
+    </div>
+
+    <div class="panel">
+      <h2>{% trans "About this item" %}</h2>
+      <p>{{ listing.public_description|linebreaksbr }}</p>
+      <dl class="facts mt-4">
+        <div><dt>{% trans "Condition" %}</dt><dd>{% condition_badge listing.portion.condition listing.portion.get_condition_display %}</dd></div>
+        <div><dt>{% trans "Location" %}</dt><dd>{{ listing.portion.location.name }}<div class="small muted">{{ listing.portion.location.building }} · {{ listing.portion.location.campus }}</div></dd></div>
+        <div><dt>{% trans "Offering department" %}</dt><dd>{{ listing.department.name }}</dd></div>
+        <div><dt>{% trans "Estimated value" %}</dt><dd class="num">{{ asset.estimated_value_aed|aed }}</dd></div>
+        <div><dt>{% trans "Purchased" %}</dt><dd>{% if asset.acquisition_date %}{{ asset.acquisition_date|date:"Y" }}{% else %}{% trans "Unknown" %}{% endif %}</dd></div>
+        {% if asset.material %}<div><dt>{% trans "Material" %}</dt><dd>{{ asset.material }}</dd></div>{% endif %}
+      </dl>
+    </div>
+
+    {% if spec_rows %}
+    <div class="panel">
+      <h2>{% trans "Specifications" %}</h2>
+      <dl class="facts">{% for label, value, unit in spec_rows %}<div><dt>{{ label }}</dt><dd>{% if value is True %}{% trans "Yes" %}{% elif value is False %}{% trans "No" %}{% else %}{{ value }}{% endif %} {{ unit }}</dd></div>{% endfor %}</dl>
+    </div>
+    {% endif %}
+
+    <div class="panel">
+      <h2>{% trans "Collection" %}</h2>
+      <p class="mb-0">{{ listing.collection_info|linebreaksbr }}</p>
+    </div>
+  </div>
+
+  <aside class="stack">
+    <div class="panel decision-panel">
+      <div class="qty-hero">{{ free_qty|qty:asset }}</div>
+      <p class="muted">{% blocktrans with unit=asset.get_unit_display %}{{ unit }} free to reserve now{% endblocktrans %} · {% trans "offered" %} {{ listing.offered_quantity|qty:asset }}</p>
+
+      {% if not can_manage %}
+        {% if listing.state == "PUBLISHED" and free_qty > 0 %}
+          {% if request_url %}
+            <a class="btn btn-primary btn-block" href="{{ request_url }}">{% icon "clipboard" %} {% trans "Request this item" %}</a>
+          {% else %}
+            <button class="btn btn-primary btn-block" type="button" aria-disabled="true" disabled aria-describedby="req-note">{% icon "clipboard" %} {% trans "Request this item" %}</button>
+            <p class="small muted mt-2 mb-0" id="req-note">{% trans "Requests open when the Requests module is installed. Seeing a listing never reserves stock." %}</p>
+          {% endif %}
+        {% else %}
+          <div class="alert alert-info mb-0">{% icon "info" %}<div>{% trans "This listing is not accepting new reservations right now." %}</div></div>
+        {% endif %}
+      {% endif %}
+
+      {% if can_manage %}
+        {% if decision %}
+          <p class="small"><strong>{% trans "Release review" %}</strong>: {{ decision.status|title }}{% if decision.reason %} · {{ decision.reason }}{% endif %}
+            {% if decision.is_test_adapter %}<span class="badge badge-test">{% trans "Test adapter" %}</span>{% endif %}</p>
+        {% endif %}
+        {% if blockers and listing.state == "AWAITING_RELEASE" %}
+          <div class="alert alert-warning"><div><strong>{% trans "Before it can be published" %}</strong><ul>{% for b in blockers %}<li>{{ b }}</li>{% endfor %}</ul></div></div>
+        {% endif %}
+        <div class="stack">
+          {% if listing.state == "DRAFT" %}<a class="btn btn-secondary btn-block" href="{% url 'catalogue:listing_edit' listing.pk %}">{% icon "edit" %} {% trans "Edit draft" %}</a>{% endif %}
+          {% for action in actions %}
+            {% if action == "submit" or action == "publish" or action == "resume" %}
+              <form method="post" action="{% url 'catalogue:listing_action' listing.pk action %}">{% csrf_token %}
+                <input type="hidden" name="version" value="{{ listing.version }}"><input type="hidden" name="operation_key" value="{{ action_form.operation_key.value }}">
+                <button class="btn btn-primary btn-block" type="submit">
+                  {% if action == "submit" %}{% icon "send" %} {% trans "Submit for release review" %}{% elif action == "publish" %}{% icon "check-circle" %} {% trans "Publish to the exchange" %}{% else %}{% trans "Resume listing" %}{% endif %}
+                </button>
+              </form>
+            {% else %}
+              <button class="btn {% if action == 'withdraw' %}btn-ghost{% else %}btn-secondary{% endif %} btn-block" type="button" data-dialog-open="act-{{ action }}">
+                {% if action == "pause" %}{% icon "pause" %} {% trans "Pause" %}{% elif action == "withdraw" %}{% trans "Withdraw listing" %}{% else %}{% trans "Close listing" %}{% endif %}
+              </button>
+              <dialog class="dialog" id="act-{{ action }}" aria-labelledby="act-{{ action }}-t">
+                <form method="post" action="{% url 'catalogue:listing_action' listing.pk action %}">{% csrf_token %}
+                  <input type="hidden" name="version" value="{{ listing.version }}">
+                  <div class="dialog-head"><h2 id="act-{{ action }}-t">{% if action == "pause" %}{% trans "Pause this listing?" %}{% elif action == "withdraw" %}{% trans "Withdraw this listing?" %}{% else %}{% trans "Close this listing?" %}{% endif %}</h2>
+                    <button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
+                  <div class="dialog-body">
+                    <dl class="effect-list"><dt>{% trans "Listing" %}</dt><dd>{{ asset.asset_code }} · {{ listing.title }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "No new reservations can start. Existing holds, transfers and history stay in place." %}</dd></dl>
+                    <div class="field mt-4"><label for="r-{{ action }}">{% trans "Reason" %}<span class="required">*</span></label><input id="r-{{ action }}" type="text" name="reason" required maxlength="255"></div>
+                  </div>
+                  <div class="dialog-foot"><button class="btn btn-secondary" type="button" data-dialog-close>{% trans "Cancel" %}</button><button class="btn {% if action == 'pause' %}btn-primary{% else %}btn-danger{% endif %}" type="submit">{% trans "Confirm" %}</button></div>
+                </form>
+              </dialog>
+            {% endif %}
+          {% endfor %}
+          <a class="btn btn-ghost btn-block" href="{% url 'inventory:asset_detail' asset.pk %}">{% trans "Open asset record" %}</a>
+        </div>
+      {% elif can_view_record %}
+        <a class="btn btn-ghost btn-block mt-4" href="{% url 'inventory:asset_detail' asset.pk %}">{% trans "Open asset record" %}</a>
+      {% endif %}
+    </div>
+    <p class="small muted">{% trans "Catalogue pages show approved listing fields only. Supplier quotes, prices and restricted evidence stay with the asset staff." %}</p>
+  </aside>
+</div>
+{% endblock %}

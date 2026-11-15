@@ -1,0 +1,151 @@
+{% extends "shared/base.html" %}{% load i18n static ui %}
+{% block title %}{% trans "Design reference" %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{% trans "Shared components · owner: Jesher" %}</span><h1>{% trans "Design reference" %}</h1></div>
+</div>
+<p class="muted" style="max-width:70ch">Every module builds its screens from these tokens and components. Do not add a second
+navigation bar, global stylesheet or palette. Ask for a shared change instead (plan Section 8).</p>
+
+<div class="tabs" role="tablist" aria-label="Reference sections">
+  <button class="tab" role="tab" id="t-found" aria-controls="p-found" aria-selected="true">Foundations</button>
+  <button class="tab" role="tab" id="t-ctrl" aria-controls="p-ctrl" aria-selected="false" tabindex="-1">Controls</button>
+  <button class="tab" role="tab" id="t-state" aria-controls="p-state" aria-selected="false" tabindex="-1">States</button>
+  <button class="tab" role="tab" id="t-data" aria-controls="p-data" aria-selected="false" tabindex="-1">Data display</button>
+</div>
+
+<section id="p-found" role="tabpanel" aria-labelledby="t-found" class="stack">
+  <div class="panel">
+    <h2>Colour tokens</h2>
+    <div class="swatches">
+      <div class="swatch"><div style="background:var(--canvas)"></div><p><code>--canvas</code> #F6F4EE</p></div>
+      <div class="swatch"><div style="background:var(--surface)"></div><p><code>--surface</code> #FFFFFF</p></div>
+      <div class="swatch"><div style="background:var(--ink)"></div><p><code>--ink</code> #102A43</p></div>
+      <div class="swatch"><div style="background:var(--ink-2)"></div><p><code>--ink-2</code> #52616B</p></div>
+      <div class="swatch"><div style="background:var(--primary)"></div><p><code>--primary</code> #146C60</p></div>
+      <div class="swatch"><div style="background:var(--attention)"></div><p><code>--attention</code> amber</p></div>
+      <div class="swatch"><div style="background:var(--danger)"></div><p><code>--danger</code> destructive</p></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Typography</h2>
+    <h1 class="mb-2">Outfit display heading</h1>
+    <h3>Outfit section heading</h3>
+    <p>Work Sans body and interface text. Quantities use tabular numbers: <span class="num">1,204 · 98 · 7</span>.</p>
+    <p lang="ar" dir="rtl" style="font-family:var(--font-arabic)">نص عربي بخط نوتو سانس العربي — رمز الأصل <span class="asset-code">KU-2026-000012</span></p>
+    <p class="small muted mb-0">Fonts are self-hosted under the SIL Open Font License (static/fonts/LICENSES.md).</p>
+  </div>
+  <div class="panel">
+    <h2>Icons</h2>
+    <div class="flex wrap" style="gap:16px">
+      {% icon "search" %}{% icon "clipboard" %}{% icon "box" %}{% icon "check-circle" %}{% icon "wrench" %}{% icon "leaf" %}{% icon "bar-chart" %}{% icon "settings" %}{% icon "bell" %}{% icon "help" %}{% icon "globe" %}{% icon "user" %}{% icon "plus" %}{% icon "upload" %}{% icon "file" %}{% icon "image" %}{% icon "grid" %}{% icon "list" %}{% icon "map-pin" %}{% icon "alert" %}{% icon "lock" %}{% icon "history" %}{% icon "shield" %}{% icon "split" %}{% icon "edit" %}{% icon "send" %}
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Category illustrations</h2>
+    <p class="muted">Decorative only: empty states and category entry points. Never used as condition evidence.</p>
+    <div class="asset-grid">
+      {% for slug in "it furniture lab av office tools"|split_words %}
+        <div class="asset-media" style="border-radius:var(--radius)"><img class="illustration" src="{% static 'graphics/catalogue/' %}{{ slug }}.svg" alt="" width="160" height="133"></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section id="p-ctrl" role="tabpanel" aria-labelledby="t-ctrl" class="stack" hidden>
+  <div class="panel">
+    <h2>Buttons</h2>
+    <div class="button-row">
+      <button class="btn btn-primary" type="button">{% icon "plus" %} Primary action</button>
+      <button class="btn btn-secondary" type="button">Secondary</button>
+      <button class="btn btn-ghost" type="button">Ghost</button>
+      <button class="btn btn-danger" type="button">Destructive</button>
+      <button class="btn btn-secondary" type="button" disabled>Disabled</button>
+      <button class="btn btn-primary btn-sm" type="button">Small</button>
+    </div>
+    <p class="small muted mt-4 mb-0">One primary action per page. Frequent touch targets are at least 44px.</p>
+  </div>
+  <div class="panel">
+    <h2>Form fields</h2>
+    <div class="form-grid">
+      <div class="field"><label for="ex1">Title<span class="required" aria-hidden="true">*</span></label><input id="ex1" type="text" value="Ergonomic chair"></div>
+      <div class="field has-error"><label for="ex2">Quantity<span class="required" aria-hidden="true">*</span></label><input id="ex2" type="number" value="-2" aria-describedby="ex2e"><span class="error" id="ex2e">{% icon "alert" "icon-sm" %} Quantity must be greater than zero.</span></div>
+      <div class="field"><label for="ex3">Category</label><select id="ex3"><option>Furniture</option></select><span class="help">Help text explains the field.</span></div>
+      <div class="field"><span class="label">Tracking</span><ul class="choice-list"><li><label><input type="radio" name="ex4" checked> Individual item</label></li><li><label><input type="radio" name="ex4"> Quantity batch</label></li></ul></div>
+      <label class="check"><input type="checkbox"> Value unknown</label>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Confirmation dialog</h2>
+    <p class="muted">Consequential actions name the exact record, quantity and effect before submission (IF-03). Focus returns to the opener.</p>
+    <button class="btn btn-secondary" type="button" data-dialog-open="demo-dialog">Open example</button>
+    <dialog class="dialog" id="demo-dialog" aria-labelledby="demo-dialog-title">
+      <div class="dialog-head"><h2 id="demo-dialog-title">Split this batch?</h2>
+        <button class="icon-button" type="button" data-dialog-close aria-label="Close">{% icon "x" %}</button></div>
+      <div class="dialog-body">
+        <dl class="effect-list"><dt>Asset</dt><dd>KU-2026-000014 Stacking chairs</dd><dt>Quantity</dt><dd>4 of 10 chairs</dd>
+          <dt>Effect</dt><dd>Creates a linked portion of 4. Total stays 10.</dd></dl>
+      </div>
+      <div class="dialog-foot"><button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+        <button class="btn btn-primary" type="button" data-dialog-close>Confirm split</button></div>
+    </dialog>
+  </div>
+</section>
+
+<section id="p-state" role="tabpanel" aria-labelledby="t-state" class="stack" hidden>
+  <div class="panel">
+    <h2>State badges</h2>
+    <p class="muted">Each state field has its own badge. Text and a marker always accompany colour.</p>
+    <h3 class="mt-4">Life-cycle</h3>
+    <div class="flex wrap">{% for value, label in lifecycles.choices %}{% lifecycle_badge value label %}{% endfor %}</div>
+    <h3 class="mt-4">Condition</h3>
+    <div class="flex wrap">{% for value, label in conditions.choices %}{% condition_badge value label %}{% endfor %}</div>
+    <h3 class="mt-4">Safety</h3>
+    <div class="flex wrap">{% tone_badge "attention" "Not yet cleared" %}{% tone_badge "success" "Cleared for reuse" %}{% tone_badge "danger" "Restricted" %}</div>
+    <h3 class="mt-4">Listing</h3>
+    <div class="flex wrap">{% tone_badge "neutral" "Draft" %}{% tone_badge "attention" "Awaiting release" %}{% tone_badge "success" "Published" %}{% tone_badge "attention" "Paused" %}{% tone_badge "neutral" "Withdrawn" %}</div>
+    <h3 class="mt-4">Integration</h3>
+    <div class="flex wrap"><span class="badge badge-test">Test adapter</span></div>
+  </div>
+  <div class="panel">
+    <h2>Alerts</h2>
+    <div class="alert alert-success">{% icon "check-circle" %}<div>Asset KU-2026-000014 registered.</div></div>
+    <div class="alert alert-warning">{% icon "alert" %}<div>The file was quarantined and cannot be opened.</div></div>
+    <div class="alert alert-error">{% icon "alert" %}<div><strong>The listing cannot be published yet.</strong><ul><li>No offered unit has current safety clearance.</li></ul></div></div>
+    <div class="alert alert-info">{% icon "info" %}<div>Requests open when the Requests module is installed.</div></div>
+  </div>
+  <div class="panel">
+    <h2>Empty and loading</h2>
+    {% static 'graphics/catalogue/office.svg' as art %}
+    {% include "shared/components/empty_state.html" with heading="No matching items" body="No permitted records match these filters. Clear a filter to see more." art=art %}
+    <div class="stack mt-4" aria-hidden="true"><div class="skeleton" style="width:60%"></div><div class="skeleton" style="width:40%"></div></div>
+  </div>
+</section>
+
+<section id="p-data" role="tabpanel" aria-labelledby="t-data" class="stack" hidden>
+  <div class="panel">
+    <h2>Quantity breakdown</h2>
+    <div class="qty-bar" aria-hidden="true"><span class="qty-free" style="width:60%"></span><span class="qty-held" style="width:20%"></span><span class="qty-transit" style="width:20%"></span></div>
+    <ul class="legend"><li><i class="qty-free"></i>Free 6</li><li><i class="qty-held"></i>Held 2</li><li><i class="qty-transit"></i>In transit 2</li></ul>
+    <p class="small muted mt-2 mb-0">Always paired with a table so values are readable without colour.</p>
+  </div>
+  <div class="table-wrap">
+    <table class="data">
+      <caption class="visually-hidden">Example table</caption>
+      <thead><tr><th scope="col">Asset ID</th><th scope="col">Description</th><th scope="col">Condition</th><th scope="col" class="num">Free</th></tr></thead>
+      <tbody>
+        <tr><td class="asset-code">KU-2026-000014</td><td>Stacking chairs</td><td>{% condition_badge "GOOD" "Good" %}</td><td class="num">6</td></tr>
+        <tr><td class="asset-code">KU-2026-000021</td><td>Dell OptiPlex 7090</td><td>{% condition_badge "FAIR" "Fair" %}</td><td class="num">1</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h2>History timeline</h2>
+    <ol class="timeline">
+      <li><span class="dot"></span><div class="what">Published to the exchange</div><div class="when">15 Nov 2026, 10:20 · Mariam (Custodian)</div></li>
+      <li><span class="dot"></span><div class="what">Batch split · 4 units</div><div class="when">14 Nov 2026, 16:02 · Mariam (Custodian)</div></li>
+      <li><span class="dot"></span><div class="what">Registered</div><div class="when">12 Nov 2026, 09:11 · Mariam (Custodian)</div></li>
+    </ol>
+  </div>
+</section>
+{% endblock %}

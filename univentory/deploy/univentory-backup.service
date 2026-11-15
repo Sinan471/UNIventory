@@ -1,0 +1,11 @@
+# Daily encrypted backup (NFR-17). Pair with univentory-backup.timer.
+[Unit]
+Description=UNIventory encrypted daily backup
+
+[Service]
+Type=oneshot
+User=univentory
+WorkingDirectory=/srv/univentory/app/univentory
+EnvironmentFile=/etc/univentory/univentory.env
+ExecStart=/srv/univentory/venv/bin/python manage.py backup_create
+ExecStartPost=/srv/univentory/venv/bin/python manage.py integrity_check --max-backup-age-hours 24

@@ -1,0 +1,11 @@
+{% load i18n ui %}
+<div class="page-head">
+  <div><span class="eyebrow">{% trans "Administration" %}</span><h1>{{ heading }}</h1></div>
+  {% if action_url %}<div class="actions"><a class="btn btn-primary" href="{{ action_url }}">{% icon "plus" %} {{ action_label }}</a></div>{% endif %}
+</div>
+<nav class="tabs" aria-label="{% trans 'Administration sections' %}">
+  {% for key, kind in kinds.items %}
+    <a class="tab" href="{% url 'identity:reference_list' key %}" {% if key == active %}aria-selected="true" aria-current="page"{% endif %}>{{ kind.2 }}</a>
+  {% endfor %}
+  <a class="tab" href="{% url 'identity:people' %}" {% if active == "people" %}aria-selected="true" aria-current="page"{% endif %}>{% trans "People and roles" %}</a>
+</nav>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" role="img" aria-hidden="true" class="illustration">
+<title>Audio-visual</title>
+<path d="M120 150 30 120l90-30 90 30z" fill="#E6E1D5"/><path d="M30 120v8l90 30v-8z" fill="#D6CFBE"/><path d="M210 120v8l-90 30v-8z" fill="#CBC3B0"/>
+
+<path d="M74 74l70-22v48l-70 22z" fill="#102A43"/>
+<path d="M80 78l58-18v38l-58 18z" fill="#2E5E7E"/>
+<path d="m102 82 18 4-18 11z" fill="#E3F1EE"/>
+<path d="M109 116v18M101 138l8-4 8 4" stroke="#102A43" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="150" y="96" width="22" height="34" rx="5" fill="#146C60"/><circle cx="161" cy="106" r="4" fill="#E3F1EE"/><circle cx="161" cy="120" r="6" fill="#E3F1EE"/>
+</svg>

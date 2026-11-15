@@ -1,0 +1,282 @@
+{% extends "shared/base.html" %}{% load i18n static ui %}
+{% block title %}{{ asset.asset_code }} {{ asset.title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'inventory:my_assets' %}">{% trans "My Assets" %}</a> / <span class="asset-code">{{ asset.asset_code }}</span></nav>
+<div class="page-head">
+  <div>
+    <span class="eyebrow"><span class="asset-code">{{ asset.asset_code }}</span> · {{ asset.category }}{% if asset.subcategory %} / {{ asset.subcategory }}{% endif %} · {{ asset.get_tracking_type_display }}</span>
+    <h1>{{ asset.title }}</h1>
+  </div>
+  <div class="actions">
+    {% if can_edit %}
+      <a class="btn btn-secondary" href="{% url 'inventory:asset_edit' asset.pk %}">{% icon "edit" %} {% trans "Edit record" %}</a>
+      {% if is_draft %}
+        <form method="post" action="{% url 'inventory:asset_activate' asset.pk %}" class="flex">
+          {% csrf_token %}
+          <label class="visually-hidden" for="activate-to">{% trans "Activate as" %}</label>
+          <select id="activate-to" name="to_state" style="width:auto"><option value="IN_USE">{% trans "In use" %}</option><option value="AVAILABLE">{% trans "Available" %}</option></select>
+          <button class="btn btn-primary" type="submit">{% trans "Activate record" %}</button>
+        </form>
+      {% elif open_listing %}
+        <a class="btn btn-primary" href="{% url 'catalogue:listing_detail' open_listing.pk %}">{% icon "search" %} {% trans "Open listing" %}</a>
+      {% else %}
+        <a class="btn btn-primary" href="{% url 'catalogue:listing_new' asset.pk %}">{% icon "send" %} {% trans "Prepare listing" %}</a>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+{% if asset.provenance != "OPERATIONAL" %}<div class="alert alert-info">{% icon "info" %}<div>{% trans "Record source:" %} <strong>{{ asset.get_provenance_display }}</strong></div></div>{% endif %}
+
+<div class="tabs" role="tablist" aria-label="{% trans 'Asset sections' %}">
+  <a class="tab" role="tab" id="t-overview" href="#overview" aria-controls="overview" aria-selected="true">{% trans "Overview" %}</a>
+  <a class="tab" role="tab" id="t-quantities" href="#quantities" aria-controls="quantities" aria-selected="false" tabindex="-1">{% trans "Quantities" %} <span class="count">{{ portions|length }}</span></a>
+  <a class="tab" role="tab" id="t-evidence" href="#evidence" aria-controls="evidence" aria-selected="false" tabindex="-1">{% trans "Evidence" %} <span class="count">{{ attachments|length }}</span></a>
+  <a class="tab" role="tab" id="t-history" href="#history" aria-controls="history" aria-selected="false" tabindex="-1">{% trans "History" %}</a>
+  <a class="tab" role="tab" id="t-listings" href="#listings" aria-controls="listings" aria-selected="false" tabindex="-1">{% trans "Listings" %} <span class="count">{{ listings|length }}</span></a>
+</div>
+
+{# ---------------- Overview ---------------- #}
+<section id="overview" role="tabpanel" aria-labelledby="t-overview">
+  <div class="grid-2">
+    <div class="stack">
+      <div class="panel">
+        <h2>{% trans "Description" %}</h2>
+        <p>{{ asset.description|linebreaksbr }}</p>
+        {% if asset.tags %}<div class="flex wrap">{% for t in asset.tags %}<span class="chip">{{ t }}</span>{% endfor %}</div>{% endif %}
+      </div>
+      <div class="panel">
+        <h2>{% trans "Record" %}</h2>
+        <dl class="facts">
+          <div><dt>{% trans "Legal owner" %}</dt><dd>{{ asset.legal_owner }}</dd></div>
+          <div><dt>{% trans "Department" %}</dt><dd>{{ asset.department }}</dd></div>
+          <div><dt>{% trans "Custodian" %}</dt><dd>{{ asset.custodian }}</dd></div>
+          <div><dt>{% trans "Home location" %}</dt><dd>{{ asset.location }}</dd></div>
+          <div><dt>{% trans "Purchase date" %}</dt><dd>{% if asset.acquisition_date %}{{ asset.acquisition_date|date:"j M Y" }}{% else %}{% trans "Unknown" %}{% endif %}</dd></div>
+          <div><dt>{% trans "Estimated value" %}</dt><dd class="num">{{ asset.estimated_value_aed|aed }}</dd></div>
+          <div><dt>{% trans "Material" %}</dt><dd>{{ asset.material|default:"-" }}</dd></div>
+          <div><dt>{% trans "Weight per unit" %}</dt><dd>{% if asset.weight_kg %}{{ asset.weight_kg|qty }} kg{% else %}{% trans "Unknown" %}{% endif %}</dd></div>
+        </dl>
+      </div>
+      {% if spec_rows %}
+      <div class="panel">
+        <h2>{% trans "Specifications" %}</h2>
+        <dl class="facts">{% for label, value, unit in spec_rows %}<div><dt>{{ label }}</dt><dd>{% if value is True %}{% trans "Yes" %}{% elif value is False %}{% trans "No" %}{% else %}{{ value }}{% endif %} {{ unit }}</dd></div>{% endfor %}</dl>
+      </div>
+      {% endif %}
+    </div>
+    <aside class="stack">
+      <div class="panel">
+        <h2>{% trans "Quantity" %}</h2>
+        <div class="qty-hero">{{ summary.free|qty:asset }} <span class="small muted" style="font-family:var(--font-body)">{% trans "free of" %} {{ summary.total|qty:asset }} {{ asset|unit_label }}</span></div>
+        {% with total=summary.total %}
+        <div class="qty-bar" aria-hidden="true">
+          <span class="qty-free" style="width:{{ summary.free|pct:total }}%"></span>
+          <span class="qty-held" style="width:{{ summary.held|pct:total }}%"></span>
+          <span class="qty-committed" style="width:{{ summary.committed|pct:total }}%"></span>
+          <span class="qty-transit" style="width:{{ summary.in_transit|pct:total }}%"></span>
+          <span class="qty-blocked" style="width:{{ summary.blocked|pct:total }}%"></span>
+        </div>
+        {% endwith %}
+        <ul class="legend">
+          <li><i class="qty-free"></i>{% trans "Free" %} {{ summary.free|qty:asset }}</li>
+          <li><i class="qty-held"></i>{% trans "Held" %} {{ summary.held|qty:asset }}</li>
+          <li><i class="qty-committed"></i>{% trans "Committed" %} {{ summary.committed|qty:asset }}</li>
+          <li><i class="qty-transit"></i>{% trans "In transit" %} {{ summary.in_transit|qty:asset }}</li>
+          <li><i class="qty-blocked"></i>{% trans "Blocked" %} {{ summary.blocked|qty:asset }}</li>
+          {% if summary.final %}<li><i class="qty-other"></i>{% trans "Final outcome" %} {{ summary.final|qty:asset }}</li>{% endif %}
+        </ul>
+        <p class="small muted mt-2 mb-0">{% trans "Free means available, safety-cleared and not claimed. Details are in the Quantities tab." %}</p>
+      </div>
+      <div class="panel">
+        <h2>{% trans "Restrictions and handling" %}</h2>
+        {% if asset.has_restriction %}
+          <p><strong>{{ asset.get_ownership_restriction_display }}</strong> · {% if asset.release_rights_confirmed %}{% trans "Release rights confirmed" as l %}{% tone_badge "success" l %}{% else %}{% trans "Release rights not confirmed" as l %}{% tone_badge "danger" l %}{% endif %}</p>
+          <p class="small">{{ asset.restriction_notes }}</p>
+        {% else %}<p class="muted small">{% trans "No ownership restriction recorded." %}</p>{% endif %}
+        {% if asset.needs_handling %}
+          <div class="flex wrap mb-2">{% if asset.is_hazardous %}{% trans "Hazardous" as l %}{% tone_badge "danger" l %}{% endif %}{% if asset.is_data_bearing %}{% trans "Stores data" as l %}{% tone_badge "attention" l %}{% endif %}{% if asset.is_regulated %}{% trans "Regulated" as l %}{% tone_badge "attention" l %}{% endif %}</div>
+          <p class="small mb-0">{{ asset.handling_notes }}</p>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</section>
+
+{# ---------------- Quantities (portions) ---------------- #}
+<section id="quantities" role="tabpanel" aria-labelledby="t-quantities" hidden>
+  <p class="muted">{% trans "Each row is a set of identical units with one location, custodian, condition, life-cycle, safety and claim. Totals are conserved across splits." %}</p>
+  <div class="table-wrap">
+    <table class="data">
+      <caption class="visually-hidden">{% trans "Current portions" %}</caption>
+      <thead><tr>
+        <th scope="col">#</th><th scope="col" class="num">{% trans "Qty" %}</th><th scope="col">{% trans "Where and who" %}</th>
+        <th scope="col">{% trans "Condition" %}</th><th scope="col">{% trans "Life-cycle" %}</th><th scope="col">{% trans "Safety" %}</th>
+        <th scope="col">{% trans "Claim" %}</th><th scope="col"><span class="visually-hidden">{% trans "Actions" %}</span></th>
+      </tr></thead>
+      <tbody>
+      {% for p in portions %}
+        <tr>
+          <td class="mono">{{ p.pk }}{% if p.parent_id %}<div class="small muted">{% trans "from" %} {{ p.parent_id }}</div>{% endif %}</td>
+          <td class="num"><strong>{{ p.quantity|qty:asset }}</strong></td>
+          <td>{{ p.location.name }}<div class="small muted">{{ p.department.code }} · {{ p.custodian }}{% if p.temporary_custodian %} · {% trans "carried by" %} {{ p.temporary_custodian }}{% endif %}</div></td>
+          <td>{% condition_badge p.condition p.get_condition_display %}</td>
+          <td>{% lifecycle_badge p.lifecycle_state p.get_lifecycle_state_display %}</td>
+          <td>{% safety_badge p %}</td>
+          <td>{% allocation_badge p %}{% if p.claim_ref %}<div class="small muted mono">{{ p.claim_ref }}</div>{% endif %}</td>
+          <td>
+            {% if can_edit and p.allocation == "FREE" %}
+            <div class="button-row">
+              {% if is_batch and p.quantity > 1 and p.lifecycle_state != "IN_TRANSIT" %}
+                <button class="btn btn-secondary btn-sm" type="button" data-dialog-open="split-{{ p.pk }}">{% icon "split" "icon-sm" %} {% trans "Split" %}</button>
+              {% endif %}
+              {% if p.lifecycle_state == "IN_USE" or p.lifecycle_state == "AVAILABLE" %}
+                <button class="btn btn-secondary btn-sm" type="button" data-dialog-open="state-{{ p.pk }}">{% trans "Change use" %}</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-dialog-open="adjust-{{ p.pk }}">{% trans "Correct count" %}</button>
+              {% endif %}
+            </div>
+
+            <dialog class="dialog" id="split-{{ p.pk }}" aria-labelledby="split-{{ p.pk }}-t">
+              <form method="post" action="{% url 'inventory:portion_split' p.pk %}">{% csrf_token %}
+                <input type="hidden" name="version" value="{{ p.version }}"><input type="hidden" name="operation_key" value="{{ op_key }}-s{{ p.pk }}">
+                <div class="dialog-head"><h2 id="split-{{ p.pk }}-t">{% trans "Split this batch?" %}</h2><button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
+                <div class="dialog-body">
+                  <dl class="effect-list"><dt>{% trans "Asset" %}</dt><dd>{{ asset.asset_code }} {{ asset.title }}</dd><dt>{% trans "Portion" %}</dt><dd>#{{ p.pk }} · {{ p.quantity|qty:asset }} {{ asset|unit_label }} {% trans "at" %} {{ p.location.name }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "Creates a linked portion. The total stays the same." %}</dd></dl>
+                  <div class="field mt-4"><label for="sq-{{ p.pk }}">{% trans "Units to separate" %}<span class="required">*</span></label><input id="sq-{{ p.pk }}" type="number" name="quantity" min="1" max="{{ p.quantity|qty:asset }}" step="any" required></div>
+                  <div class="field mt-4"><label for="sr-{{ p.pk }}">{% trans "Reason" %}</label><input id="sr-{{ p.pk }}" type="text" name="reason" maxlength="200"></div>
+                </div>
+                <div class="dialog-foot"><button class="btn btn-secondary" type="button" data-dialog-close>{% trans "Cancel" %}</button><button class="btn btn-primary" type="submit">{% trans "Confirm split" %}</button></div>
+              </form>
+            </dialog>
+
+            <dialog class="dialog" id="state-{{ p.pk }}" aria-labelledby="state-{{ p.pk }}-t">
+              <form method="post" action="{% url 'inventory:portion_state' p.pk %}">{% csrf_token %}
+                <input type="hidden" name="version" value="{{ p.version }}"><input type="hidden" name="operation_key" value="{{ op_key }}-u{{ p.pk }}">
+                <div class="dialog-head"><h2 id="state-{{ p.pk }}-t">{% trans "Change use" %}</h2><button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
+                <div class="dialog-body">
+                  <p class="muted">{% trans "Available units can be offered on the exchange once safety-cleared and released. In use units cannot be reserved." %}</p>
+                  <div class="field"><label for="ts-{{ p.pk }}">{% trans "New state" %}</label><select id="ts-{{ p.pk }}" name="to_state">
+                    <option value="AVAILABLE" {% if p.lifecycle_state == "IN_USE" %}selected{% endif %}>{% trans "Available" %}</option>
+                    <option value="IN_USE" {% if p.lifecycle_state == "AVAILABLE" %}selected{% endif %}>{% trans "In use" %}</option></select></div>
+                  {% if is_batch %}<div class="field mt-4"><label for="tq-{{ p.pk }}">{% trans "Units (blank for all)" %}</label><input id="tq-{{ p.pk }}" type="number" name="quantity" min="1" max="{{ p.quantity|qty:asset }}" step="any"></div>{% endif %}
+                </div>
+                <div class="dialog-foot"><button class="btn btn-secondary" type="button" data-dialog-close>{% trans "Cancel" %}</button><button class="btn btn-primary" type="submit">{% trans "Update" %}</button></div>
+              </form>
+            </dialog>
+
+            <dialog class="dialog" id="adjust-{{ p.pk }}" aria-labelledby="adjust-{{ p.pk }}-t">
+              <form method="post" action="{% url 'inventory:portion_adjust' p.pk %}">{% csrf_token %}
+                <input type="hidden" name="version" value="{{ p.version }}"><input type="hidden" name="operation_key" value="{{ op_key }}-a{{ p.pk }}">
+                <div class="dialog-head"><h2 id="adjust-{{ p.pk }}-t">{% trans "Correct the counted quantity?" %}</h2><button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
+                <div class="dialog-body">
+                  <dl class="effect-list"><dt>{% trans "Portion" %}</dt><dd>#{{ p.pk }} · {% trans "recorded" %} {{ p.quantity|qty:asset }} {{ asset|unit_label }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "Records an adjustment event with your reason. Claimed units cannot be reduced." %}</dd></dl>
+                  <div class="field mt-4"><label for="aq-{{ p.pk }}">{% trans "Counted quantity" %}<span class="required">*</span></label><input id="aq-{{ p.pk }}" type="number" name="quantity" min="0" step="any" required value="{{ p.quantity|qty:asset }}"></div>
+                  <div class="field mt-4"><label for="ar-{{ p.pk }}">{% trans "Reason for the correction" %}<span class="required">*</span></label><input id="ar-{{ p.pk }}" type="text" name="reason" maxlength="200" required></div>
+                </div>
+                <div class="dialog-foot"><button class="btn btn-secondary" type="button" data-dialog-close>{% trans "Cancel" %}</button><button class="btn btn-primary" type="submit">{% trans "Record correction" %}</button></div>
+              </form>
+            </dialog>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}<tr><td colspan="8" class="muted">{% trans "No current units." %}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted mt-4">{% trans "Safety clearance, inspection, transfer and final outcomes are recorded by their own workflows, not edited here." %}</p>
+</section>
+
+{# ---------------- Evidence ---------------- #}
+<section id="evidence" role="tabpanel" aria-labelledby="t-evidence" hidden>
+  <div class="grid-2">
+    <div>
+      {% if attachments %}
+      <div class="table-wrap">
+        <table class="data">
+          <caption class="visually-hidden">{% trans "Evidence files" %}</caption>
+          <thead><tr><th scope="col">{% trans "File" %}</th><th scope="col">{% trans "Visibility" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col"><span class="visually-hidden">{% trans "Actions" %}</span></th></tr></thead>
+          <tbody>
+          {% for a in attachments %}
+            <tr>
+              <td>
+                {% if a.is_available %}<a class="row-title" href="{% evidence_url a %}">{% if a.is_image %}{% icon "image" "icon-sm" %}{% else %}{% icon "file" "icon-sm" %}{% endif %} {{ a.original_name }}</a>{% else %}<span>{{ a.original_name }}</span>{% endif %}
+                <div class="small muted">{{ a.size_bytes|filesizeformat }} · {{ a.uploaded_at|date:"j M Y H:i" }} · {{ a.uploaded_by }}{% if a.description %} · {{ a.description }}{% endif %}</div>
+              </td>
+              <td>{% if a.access_class == "CATALOGUE_PHOTO" %}{% trans "Catalogue photo" as l %}{% tone_badge "info" l %}{% else %}<span class="flex small">{% icon "lock" "icon-sm" %} {% trans "Restricted" %}</span>{% endif %}</td>
+              <td>{% if a.withdrawn_at %}{% trans "Withdrawn" as l %}{% tone_badge "neutral" l %}<div class="small muted">{{ a.withdrawn_reason }}</div>{% elif a.status == "QUARANTINED" %}{% trans "Quarantined" as l %}{% tone_badge "danger" l %}<div class="small muted">{{ a.status_reason }}</div>{% else %}{% trans "Accepted" as l %}{% tone_badge "success" l %}{% endif %}</td>
+              <td>{% if can_edit and not a.withdrawn_at %}
+                <button class="btn btn-ghost btn-sm" type="button" data-dialog-open="wd-{{ a.pk }}">{% trans "Withdraw" %}</button>
+                <dialog class="dialog" id="wd-{{ a.pk }}" aria-labelledby="wd-{{ a.pk }}-t">
+                  <form method="post" action="{% url 'inventory:attachment_withdraw' a.pk %}">{% csrf_token %}
+                    <div class="dialog-head"><h2 id="wd-{{ a.pk }}-t">{% trans "Withdraw this file?" %}</h2><button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
+                    <div class="dialog-body"><p class="muted">{{ a.original_name }}. {% trans "It stops being shown but stays in the record history." %}</p>
+                      <div class="field"><label for="wr-{{ a.pk }}">{% trans "Reason" %}<span class="required">*</span></label><input id="wr-{{ a.pk }}" type="text" name="reason" required maxlength="200"></div></div>
+                    <div class="dialog-foot"><button class="btn btn-secondary" type="button" data-dialog-close>{% trans "Cancel" %}</button><button class="btn btn-danger" type="submit">{% trans "Withdraw file" %}</button></div>
+                  </form>
+                </dialog>
+              {% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        {% trans "No evidence yet" as heading %}{% trans "Photos and documents support condition, ownership and handling decisions." as body %}
+        {% include "shared/components/empty_state.html" with heading=heading body=body %}
+      {% endif %}
+    </div>
+    {% if can_edit %}
+    <aside class="panel">
+      <h2>{% trans "Add evidence" %}</h2>
+      <form method="post" action="{% url 'inventory:attachment_upload' asset.pk %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="stack">{% for field in upload_form %}{% include "shared/components/field.html" %}{% endfor %}</div>
+        <button class="btn btn-primary mt-4" type="submit">{% icon "upload" %} {% trans "Upload" %}</button>
+      </form>
+      <p class="small muted mt-4 mb-0">{% trans "Up to ten files per record. Files are checked by content; unreadable or unsafe files are quarantined. A photo never certifies safety." %}</p>
+    </aside>
+    {% endif %}
+  </div>
+</section>
+
+{# ---------------- History ---------------- #}
+<section id="history" role="tabpanel" aria-labelledby="t-history" hidden>
+  <div class="panel">
+    <div class="panel-head"><h2>{% trans "Life-cycle history" %}</h2><span class="muted small end">{% trans "Newest first · immutable" %}</span></div>
+    <ol class="timeline">
+      {% for e in events %}
+      <li>
+        <span class="dot"></span>
+        <div class="what">{{ e.get_event_type_display }}{% if e.quantity %} · <span class="num">{{ e.quantity|qty:asset }}</span> {{ asset|unit_label }}{% endif %}{% if e.details.action %} · {{ e.details.action }}{% endif %}</div>
+        <div class="when"><time datetime="{{ e.occurred_at|date:'c' }}">{{ e.occurred_at|date:"j M Y, H:i" }}</time> · {{ e.actor }}{% if e.reference %} · <span class="mono">{{ e.reference }}</span>{% endif %}{% if e.portion_id %} · {% trans "portion" %} #{{ e.portion_id }}{% endif %}</div>
+        {% if e.details.reason %}<div class="small">{{ e.details.reason }}</div>{% endif %}
+        {% if e.details.from and e.details.to %}<div class="small muted">{{ e.details.from }} → {{ e.details.to }}</div>{% endif %}
+        {% if e.details.after %}<div class="small muted">{% trans "Changed:" %} {{ e.details.after.keys|join:", " }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+
+{# ---------------- Listings ---------------- #}
+<section id="listings" role="tabpanel" aria-labelledby="t-listings" hidden>
+  {% if listings %}
+  <div class="table-wrap">
+    <table class="data">
+      <caption class="visually-hidden">{% trans "Listings for this asset" %}</caption>
+      <thead><tr><th scope="col">{% trans "Listing" %}</th><th scope="col">{% trans "State" %}</th><th scope="col" class="num">{% trans "Offered" %}</th><th scope="col" class="num">{% trans "Free now" %}</th></tr></thead>
+      <tbody>
+      {% for l in listings %}
+        <tr><td><a class="row-title" href="{% url 'catalogue:listing_detail' l.pk %}">{{ l.title }}</a><div class="small muted">{{ l.department.code }} · {{ l.created_at|date:"j M Y" }}</div></td>
+          <td>{% listing_badge l %}{% if l.state_reason %}<div class="small muted">{{ l.state_reason }}</div>{% endif %}</td>
+          <td class="num">{{ l.offered_quantity|qty:asset }}</td><td class="num">{{ l.free_now|qty:asset }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {% trans "Not listed on the exchange" as heading %}{% trans "Prepare a listing to offer surplus or underused units to other departments." as body %}
+    {% include "shared/components/empty_state.html" with heading=heading body=body %}
+  {% endif %}
+</section>
+{% endblock %}

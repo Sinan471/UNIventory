@@ -1,0 +1,112 @@
+{% extends "shared/base.html" %}{% load i18n static ui %}
+{% block title %}{% trans "Exchange" %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{% trans "Campus resource exchange" %}</span><h1>{% trans "Find before you buy" %}</h1></div>
+</div>
+
+<form method="get" data-catalogue role="search" aria-label="{% trans 'Search the exchange' %}">
+  <input type="hidden" name="view" value="{{ view_mode }}">
+  <div class="search-bar">
+    <label class="visually-hidden" for="id_q">{% trans "Search" %}</label>
+    {{ form.q }}
+    <button class="btn btn-primary" type="submit">{% icon "search" %} <span>{% trans "Search" %}</span></button>
+  </div>
+
+  <div class="discovery">
+    <aside class="filters" aria-label="{% trans 'Filters' %}">
+      <div class="flex mb-2"><h2 class="mb-0" style="font-size:var(--text-md)">{% icon "filter" "icon-sm" %} {% trans "Filters" %}</h2>
+        <a class="btn btn-ghost btn-sm end" href="{% url 'catalogue:exchange' %}?view={{ view_mode }}">{% trans "Clear all" %}</a></div>
+      {% include "shared/components/field.html" with field=form.category %}
+      {% include "shared/components/field.html" with field=form.condition %}
+      {% include "shared/components/field.html" with field=form.department %}
+      {% include "shared/components/field.html" with field=form.availability %}
+      <details {% if form.advanced_open %}open{% endif %}>
+        <summary>{% trans "More filters" %}</summary>
+        {% include "shared/components/field.html" with field=form.location %}
+        {% include "shared/components/field.html" with field=form.min_qty %}
+        {% include "shared/components/field.html" with field=form.age %}
+        {% include "shared/components/field.html" with field=form.value_min %}
+        {% include "shared/components/field.html" with field=form.value_max %}
+        {% include "shared/components/field.html" with field=form.lifecycle %}
+      </details>
+      <button class="btn btn-secondary btn-block mt-4" type="submit">{% trans "Apply filters" %}</button>
+    </aside>
+
+    <section aria-labelledby="results-heading">
+      <div class="results-head">
+        <h2 id="results-heading" class="count mb-0" style="font-size:var(--text-md)" aria-live="polite">
+          {% blocktrans count counter=count %}{{ counter }} listing{% plural %}{{ counter }} listings{% endblocktrans %}
+        </h2>
+        <div class="tools">
+          <label class="visually-hidden" for="id_sort">{% trans "Sort by" %}</label>
+          <div style="width:200px">{{ form.sort }}</div>
+          <div class="segmented" role="group" aria-label="{% trans 'Layout' %}">
+            <a href="?{{ querystring|default:'' }}&amp;view=grid" aria-current="{% if view_mode == 'grid' %}true{% else %}false{% endif %}" title="{% trans 'Grid' %}">{% icon "grid" %}<span class="visually-hidden">{% trans "Grid view" %}</span></a>
+            <a href="?{{ querystring|default:'' }}&amp;view=list" aria-current="{% if view_mode == 'list' %}true{% else %}false{% endif %}" title="{% trans 'List' %}">{% icon "list" %}<span class="visually-hidden">{% trans "List view" %}</span></a>
+          </div>
+        </div>
+      </div>
+
+      {% if active_filters %}
+      <div class="chips" aria-label="{% trans 'Active filters' %}">
+        {% for label, value in active_filters %}<span class="chip">{{ label }}: <strong>{{ value }}</strong></span>{% endfor %}
+      </div>
+      {% endif %}
+
+      {% if page.object_list %}
+        {% if view_mode == "list" %}
+        <ul class="asset-list">
+          {% for listing in page.object_list %}{% with asset=listing.asset photo=photos|get_item:listing.pk %}
+          <li class="asset-row">
+            <div class="asset-media">{% if photo %}<img src="{% evidence_url photo %}" alt="" loading="lazy" width="96" height="72">{% else %}<img class="illustration" src="{% category_art asset.category %}" alt="" width="60" height="50">{% endif %}</div>
+            <div>
+              <h3><a href="{% url 'catalogue:listing_detail' listing.pk %}">{{ listing.title }}</a></h3>
+              <div class="asset-meta">
+                <span class="asset-code">{{ asset.asset_code }}</span>
+                {% with p=listing.portion %}{% condition_badge p.condition p.get_condition_display %}{% endwith %}
+                <span>{% icon "map-pin" %} {{ listing.portion.location.name }}</span>
+                <span>{{ listing.department.code }}</span>
+              </div>
+              <p class="small muted mb-0 mt-2">{{ listing.public_description|truncatechars:140 }}</p>
+            </div>
+            <div class="row-qty"><div class="free-qty">{{ listing.free_qty|qty:asset }} <small>{% trans "free" %}</small></div>{% listing_badge listing %}</div>
+          </li>
+          {% endwith %}{% endfor %}
+        </ul>
+        {% else %}
+        <ul class="asset-grid">
+          {% for listing in page.object_list %}{% with asset=listing.asset photo=photos|get_item:listing.pk %}
+          <li>
+            <article class="asset-card">
+              <div class="asset-media">{% if photo %}<img src="{% evidence_url photo %}" alt="" loading="lazy" width="320" height="240">{% else %}<img class="illustration" src="{% category_art asset.category %}" alt="" width="160" height="133">{% endif %}</div>
+              <div class="asset-body">
+                <span class="small muted"><span class="asset-code">{{ asset.asset_code }}</span> · {{ asset.category }}</span>
+                <h3><a href="{% url 'catalogue:listing_detail' listing.pk %}">{{ listing.title }}</a></h3>
+                <p class="small muted mb-0">{{ listing.public_description|truncatechars:90 }}</p>
+                <div class="asset-meta">
+                  {% with p=listing.portion %}{% condition_badge p.condition p.get_condition_display %}{% endwith %}
+                  <span>{% icon "map-pin" %} {{ listing.portion.location.name }}</span>
+                </div>
+              </div>
+              <div class="asset-foot">
+                <span class="free-qty">{{ listing.free_qty|qty:asset }} <small>{% trans "free" %} {{ asset|unit_label }}</small></span>
+                {% listing_badge listing %}
+              </div>
+            </article>
+          </li>
+          {% endwith %}{% endfor %}
+        </ul>
+        {% endif %}
+        {% include "shared/components/pagination.html" %}
+      {% else %}
+        {% static 'graphics/catalogue/office.svg' as art %}
+        {% trans "No matching items found" as heading %}
+        {% trans "No permitted listings match your search and filters. Clear a filter or try a broader term." as body %}
+        {% url 'catalogue:exchange' as clear_url %}{% trans "Clear filters" as clear_label %}
+        {% include "shared/components/empty_state.html" with art=art heading=heading body=body action_url=clear_url action_label=clear_label %}
+      {% endif %}
+    </section>
+  </div>
+</form>
+{% endblock %}

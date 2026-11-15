@@ -1,0 +1,7 @@
+{% load static %}
+<div class="empty">
+  {% if art %}<img src="{{ art }}" alt="" width="160" height="133">{% endif %}
+  <h2>{{ heading }}</h2>
+  {% if body %}<p class="muted">{{ body }}</p>{% endif %}
+  {% if action_url %}<a class="btn btn-primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+</div>

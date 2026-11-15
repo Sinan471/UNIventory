@@ -1,0 +1,105 @@
+{% load static i18n ui %}<!doctype html>
+{% get_current_language as LANG %}{% get_current_language_bidi as RTL %}
+<html lang="{{ LANG }}" dir="{% if RTL %}rtl{% else %}ltr{% endif %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}UNIventory{% endblock %} · UNIventory</title>
+  <link rel="preload" href="{% static 'fonts/work-sans.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
+  <link rel="stylesheet" href="{% static 'design/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'design/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% include "shared/icons.html" %}
+<a class="skip-link" href="#main">{% trans "Skip to main content" %}</a>
+{% block shell %}
+<div class="shell">
+  <nav class="rail" aria-label="{% trans 'Main' %}">
+    <a class="brand" href="{% url 'core:home' %}">
+      <span class="brand-mark">{% icon "box" %}</span> UNIventory
+    </a>
+    {% for item in nav_items %}
+      <a class="nav-link" href="{{ item.url }}" {% if item.key == nav_current %}aria-current="page"{% endif %}>
+        {% icon item.icon %} <span>{{ item.label }}</span>
+      </a>
+    {% endfor %}
+    <div class="rail-foot">
+      <a class="nav-link" href="{% url 'core:design_reference' %}">{% icon "grid" %} <span>{% trans "Design reference" %}</span></a>
+    </div>
+  </nav>
+
+  <div class="main">
+    {% if test_adapters_active %}
+      <div class="banner-test" role="note">
+        {% icon "alert" "icon-sm" %}
+        <span>{% blocktrans with names=test_adapters_active|join:", " %}Integration test adapters active ({{ names }}). Results from these adapters are not real workflow decisions.{% endblocktrans %}</span>
+      </div>
+    {% endif %}
+    <header class="topbar">
+      <a class="brand" href="{% url 'core:home' %}"><span class="brand-mark">{% icon "box" %}</span> UNIventory</a>
+      <div class="topbar-actions">
+        {# Notifications slot: Sinan's notifications module renders here when installed. #}
+        {% block notifications_slot %}{% endblock %}
+        {# Help / assistant slot: Jessica's assistant drawer mounts here when installed. #}
+        {% block assistant_slot %}{% endblock %}
+        <form action="{% url 'set_language' %}" method="post" class="lang-switch">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          {% if LANG == "ar" %}
+            <button class="icon-button" name="language" value="en" title="English" data-no-busy>{% icon "globe" %}<span class="visually-hidden">English</span></button>
+          {% else %}
+            <button class="icon-button" name="language" value="ar" title="العربية" data-no-busy>{% icon "globe" %}<span class="visually-hidden">العربية</span></button>
+          {% endif %}
+        </form>
+        {% if user.is_authenticated %}
+        <div class="menu">
+          <button class="profile-chip" type="button" data-menu-button aria-controls="profile-menu" aria-expanded="false">
+            <span class="avatar" aria-hidden="true">{{ user|initials }}</span>
+            <span class="visually-hidden">{% trans "Account menu for" %} </span><span class="small">{{ user.display_name }}</span>
+          </button>
+          <div class="menu-panel" id="profile-menu" hidden>
+            <div class="menu-meta">
+              <strong>{{ user.display_name }}</strong><br>
+              <span class="small muted">{{ user.email }}</span>
+            </div>
+            {% for item in nav_items %}{% if not item.primary %}
+              <a class="menu-item" href="{{ item.url }}">{% icon item.icon %} {{ item.label }}</a>
+            {% endif %}{% endfor %}
+            <form method="post" action="{% url 'identity:logout' %}">
+              {% csrf_token %}
+              <button class="menu-item" type="submit" data-no-busy>{% icon "logout" %} {% trans "Sign out" %}</button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <main id="main" class="content" tabindex="-1">
+      {% if messages %}
+        <div aria-live="polite">
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}">
+            {% if message.tags == 'error' %}{% icon "alert" %}{% elif message.tags == 'success' %}{% icon "check-circle" %}{% else %}{% icon "info" %}{% endif %}
+            <div>{{ message }}</div>
+          </div>
+        {% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<nav class="bottom-nav" aria-label="{% trans 'Main' %}">
+  {% for item in nav_items %}{% if item.primary %}
+    <a href="{{ item.url }}" {% if item.key == nav_current %}aria-current="page"{% endif %}>{% icon item.icon %}<span>{{ item.label }}</span></a>
+  {% endif %}{% endfor %}
+</nav>
+{% endblock %}
+<script src="{% static 'design/app.js' %}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

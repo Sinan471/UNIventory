@@ -1,0 +1,351 @@
+# Arabic catalogue: global navigation, shared components and Jesher's core
+# screens (FR-57, Low priority). Module owners keep their own strings in
+# <module>/locale/ar/LC_MESSAGES/django.po.
+# Status: draft translation. A fluent reviewer must check it before the
+# Arabic acceptance scenario (NFR-21); do not treat it as reviewed.
+msgid ""
+msgstr ""
+"Project-Id-Version: UNIventory 0.1\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+# --- Global navigation ---
+msgid "Exchange"
+msgstr "التبادل"
+
+msgid "My Requests"
+msgstr "طلباتي"
+
+msgid "My Assets"
+msgstr "أصولي"
+
+msgid "Approvals"
+msgstr "الموافقات"
+
+msgid "Care"
+msgstr "الصيانة والعناية"
+
+msgid "Impact"
+msgstr "الأثر"
+
+msgid "Reports"
+msgstr "التقارير"
+
+msgid "Administration"
+msgstr "الإدارة"
+
+msgid "Main"
+msgstr "الرئيسية"
+
+msgid "Skip to main content"
+msgstr "انتقل إلى المحتوى الرئيسي"
+
+msgid "Design reference"
+msgstr "مرجع التصميم"
+
+msgid "Sign in"
+msgstr "تسجيل الدخول"
+
+msgid "Sign out"
+msgstr "تسجيل الخروج"
+
+msgid "Account menu for"
+msgstr "قائمة الحساب لـ"
+
+msgid "English"
+msgstr "الإنجليزية"
+
+msgid "Arabic"
+msgstr "العربية"
+
+# --- Sign-in ---
+msgid "Continue with KU sign-in"
+msgstr "المتابعة بحساب جامعة خليفة"
+
+msgid "Find it on campus before you buy it."
+msgstr "ابحث عنه في الحرم الجامعي قبل أن تشتريه."
+
+msgid "Use your Khalifa University account. You will confirm with Microsoft Authenticator on the university sign-in page. UNIventory never sees your password."
+msgstr "استخدم حساب جامعة خليفة. ستؤكد الدخول عبر Microsoft Authenticator في صفحة الجامعة. لا يطّلع UNIventory على كلمة المرور."
+
+msgid "You have signed out"
+msgstr "تم تسجيل خروجك"
+
+msgid "Sign in again"
+msgstr "سجّل الدخول مجددًا"
+
+msgid "Try again"
+msgstr "حاول مرة أخرى"
+
+msgid "Sign-in cancelled"
+msgstr "تم إلغاء تسجيل الدخول"
+
+msgid "Your account has no UNIventory role yet"
+msgstr "لا يملك حسابك دورًا في UNIventory بعد"
+
+# --- Catalogue ---
+msgid "Campus resource exchange"
+msgstr "تبادل موارد الحرم الجامعي"
+
+msgid "Find before you buy"
+msgstr "ابحث قبل أن تشتري"
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "Filters"
+msgstr "عوامل التصفية"
+
+msgid "Clear all"
+msgstr "مسح الكل"
+
+msgid "Clear filters"
+msgstr "مسح عوامل التصفية"
+
+msgid "More filters"
+msgstr "مزيد من عوامل التصفية"
+
+msgid "Apply filters"
+msgstr "تطبيق عوامل التصفية"
+
+msgid "Category"
+msgstr "الفئة"
+
+msgid "All categories"
+msgstr "جميع الفئات"
+
+msgid "Condition"
+msgstr "الحالة"
+
+msgid "Any condition"
+msgstr "أي حالة"
+
+msgid "Department"
+msgstr "القسم"
+
+msgid "All departments"
+msgstr "جميع الأقسام"
+
+msgid "Location"
+msgstr "الموقع"
+
+msgid "Any location"
+msgstr "أي موقع"
+
+msgid "Availability"
+msgstr "التوفر"
+
+msgid "Free units now"
+msgstr "وحدات متاحة الآن"
+
+msgid "All published listings"
+msgstr "جميع العروض المنشورة"
+
+msgid "Sort by"
+msgstr "ترتيب حسب"
+
+msgid "Newest"
+msgstr "الأحدث"
+
+msgid "free"
+msgstr "متاح"
+
+msgid "Grid view"
+msgstr "عرض شبكي"
+
+msgid "List view"
+msgstr "عرض قائمة"
+
+msgid "No matching items found"
+msgstr "لا توجد عناصر مطابقة"
+
+msgid "No permitted listings match your search and filters. Clear a filter or try a broader term."
+msgstr "لا توجد عروض مسموح بها تطابق البحث وعوامل التصفية. امسح عامل تصفية أو جرّب كلمة أعم."
+
+msgid "Request this item"
+msgstr "اطلب هذا العنصر"
+
+msgid "About this item"
+msgstr "عن هذا العنصر"
+
+msgid "Specifications"
+msgstr "المواصفات"
+
+msgid "Collection"
+msgstr "الاستلام"
+
+msgid "Previous"
+msgstr "السابق"
+
+msgid "Next"
+msgstr "التالي"
+
+# --- States ---
+msgid "Draft"
+msgstr "مسودة"
+
+msgid "In use"
+msgstr "قيد الاستخدام"
+
+msgid "Available"
+msgstr "متاح"
+
+msgid "Under inspection"
+msgstr "قيد الفحص"
+
+msgid "Under maintenance"
+msgstr "قيد الصيانة"
+
+msgid "In transit"
+msgstr "قيد النقل"
+
+msgid "Retired"
+msgstr "متقاعد من الخدمة"
+
+msgid "Lost"
+msgstr "مفقود"
+
+msgid "Awaiting release"
+msgstr "بانتظار الإفراج"
+
+msgid "Published"
+msgstr "منشور"
+
+msgid "Paused"
+msgstr "متوقف مؤقتًا"
+
+msgid "Withdrawn"
+msgstr "مسحوب"
+
+msgid "Closed"
+msgstr "مغلق"
+
+msgid "Poor"
+msgstr "سيئة"
+
+msgid "Fair"
+msgstr "مقبولة"
+
+msgid "Good"
+msgstr "جيدة"
+
+msgid "Excellent"
+msgstr "ممتازة"
+
+msgid "Unknown - pending inspection"
+msgstr "غير معروفة - بانتظار الفحص"
+
+msgid "Not yet cleared"
+msgstr "لم تتم الموافقة بعد"
+
+msgid "Cleared for reuse"
+msgstr "معتمد لإعادة الاستخدام"
+
+msgid "Restricted"
+msgstr "مقيّد"
+
+msgid "Unknown"
+msgstr "غير معروف"
+
+# --- Asset forms and validation ---
+msgid "Register asset"
+msgstr "تسجيل أصل"
+
+msgid "Register an asset"
+msgstr "تسجيل أصل جديد"
+
+msgid "Title"
+msgstr "العنوان"
+
+msgid "Description"
+msgstr "الوصف"
+
+msgid "Subcategory"
+msgstr "الفئة الفرعية"
+
+msgid "Tags"
+msgstr "الوسوم"
+
+msgid "Quantity"
+msgstr "الكمية"
+
+msgid "Unit"
+msgstr "الوحدة"
+
+msgid "Tracking"
+msgstr "طريقة التتبع"
+
+msgid "Individual item"
+msgstr "عنصر فردي"
+
+msgid "Quantity batch"
+msgstr "دفعة كمية"
+
+msgid "Legal owner"
+msgstr "المالك القانوني"
+
+msgid "Purchase date"
+msgstr "تاريخ الشراء"
+
+msgid "Purchase date unknown"
+msgstr "تاريخ الشراء غير معروف"
+
+msgid "Estimated value (AED)"
+msgstr "القيمة التقديرية (درهم)"
+
+msgid "Value unknown"
+msgstr "القيمة غير معروفة"
+
+msgid "Save changes"
+msgstr "حفظ التغييرات"
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Confirm"
+msgstr "تأكيد"
+
+msgid "Reason"
+msgstr "السبب"
+
+msgid "Please correct the highlighted fields. Your other entries were kept."
+msgstr "يرجى تصحيح الحقول المحددة. تم الاحتفاظ ببقية المدخلات."
+
+msgid "Please correct the problems below."
+msgstr "يرجى تصحيح المشكلات أدناه."
+
+msgid "Condition is not a safety clearance."
+msgstr "الحالة ليست موافقة سلامة."
+
+msgid "This page is not available"
+msgstr "هذه الصفحة غير متاحة"
+
+msgid "You don't have permission for this"
+msgstr "ليست لديك صلاحية لهذا الإجراء"
+
+msgid "Go to my start page"
+msgstr "الانتقال إلى صفحة البداية"
+
+msgid "%(counter)s listing"
+msgid_plural "%(counter)s listings"
+msgstr[0] "لا توجد عروض"
+msgstr[1] "عرض واحد"
+msgstr[2] "عرضان"
+msgstr[3] "%(counter)s عروض"
+msgstr[4] "%(counter)s عرضًا"
+msgstr[5] "%(counter)s عرض"
+
+msgid "Integration test adapters active (%(names)s). Results from these adapters are not real workflow decisions."
+msgstr "محولات اختبار التكامل مفعّلة (%(names)s). نتائجها ليست قرارات سير عمل حقيقية."
+
+msgid "Chairs, microscope, KU-2026-000012"
+msgstr "كراسٍ، مجهر، KU-2026-000012"
+
+msgid "Title, asset ID or description"
+msgstr "العنوان أو رمز الأصل أو الوصف"

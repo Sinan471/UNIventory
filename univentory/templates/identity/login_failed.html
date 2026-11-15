@@ -1,0 +1,11 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{% trans "Sign-in did not complete" %}{% endblock %}
+{% block shell %}
+<main id="main" class="state-page" style="padding:0 var(--gutter)">
+  <div class="code" aria-hidden="true">{% icon "lock" %}</div>
+  <h1>{% if cancelled %}{% trans "Sign-in cancelled" %}{% else %}{% trans "Sign-in did not complete" %}{% endif %}</h1>
+  <p class="muted">{{ reason }}</p>
+  <p class="muted small">{% trans "No protected page was opened." %}</p>
+  <a class="btn btn-primary" href="{% url 'identity:login' %}">{% trans "Try again" %}</a>
+</main>
+{% endblock %}

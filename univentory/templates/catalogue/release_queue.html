@@ -1,0 +1,44 @@
+{% extends "shared/base.html" %}{% load i18n static ui %}
+{% block title %}{% trans "Release reviews" %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{% trans "Approvals" %} <span class="badge badge-test">{% trans "Test adapter" %}</span></span><h1>{% trans "Release reviews" %}</h1></div>
+</div>
+<div class="alert alert-warning">{% icon "alert" %}<div>{% trans "This queue is a labelled integration test adapter. It stands in for the Approvals workflow until that module is installed, and applies the same independence rule: you cannot decide a listing you prepared." %}</div></div>
+
+{% if rows %}
+<div class="stack">
+  {% for listing in rows %}
+  <section class="panel">
+    <div class="panel-head">
+      <div><span class="small muted"><span class="asset-code">{{ listing.asset.asset_code }}</span> · {{ listing.asset.department.name }}</span>
+        <h2 style="font-size:var(--text-lg)"><a href="{% url 'catalogue:listing_detail' listing.pk %}">{{ listing.title }}</a></h2></div>
+      <span class="end">{% listing_badge listing %}</span>
+    </div>
+    <dl class="facts mb-4">
+      <div><dt>{% trans "Offered" %}</dt><dd class="num">{{ listing.offered_quantity|qty:listing.asset }} {{ listing.asset|unit_label }}</dd></div>
+      <div><dt>{% trans "Prepared by" %}</dt><dd>{{ listing.created_by }}</dd></div>
+      <div><dt>{% trans "Restriction" %}</dt><dd>{{ listing.asset.get_ownership_restriction_display }}</dd></div>
+      <div><dt>{% trans "Listing version" %}</dt><dd class="num">{{ listing.version }}</dd></div>
+    </dl>
+    <form method="post" action="{% url 'catalogue:release_decide' listing.pk %}">{% csrf_token %}
+      <fieldset>
+        <legend class="label small" style="font-weight:600">{% trans "Decision" %}</legend>
+        <ul class="choice-list">
+          <li><label><input type="radio" name="decision" value="approved" required> {% trans "Approve release" %}</label></li>
+          <li><label><input type="radio" name="decision" value="returned"> {% trans "Return for changes" %}</label></li>
+          <li><label><input type="radio" name="decision" value="rejected"> {% trans "Reject" %}</label></li>
+        </ul>
+      </fieldset>
+      <div class="field mt-4"><label for="reason-{{ listing.pk }}">{% trans "Reason (required to return or reject)" %}</label><textarea id="reason-{{ listing.pk }}" name="reason" rows="2"></textarea></div>
+      <button class="btn btn-primary mt-4" type="submit">{% trans "Record decision" %}</button>
+    </form>
+  </section>
+  {% endfor %}
+</div>
+{% else %}
+  {% static 'graphics/catalogue/office.svg' as art %}
+  {% trans "No release reviews waiting" as heading %}{% trans "Listings submitted by custodians in your department appear here." as body %}
+  {% include "shared/components/empty_state.html" with art=art heading=heading body=body %}
+{% endif %}
+{% endblock %}

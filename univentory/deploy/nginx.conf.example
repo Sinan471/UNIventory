@@ -1,0 +1,37 @@
+# UNIventory TLS reverse proxy (owner: Jesher, NFR-10 / IF-08).
+# Static files are public design assets only. Evidence files are NEVER
+# served by nginx: they live under UNIVENTORY_PROTECTED_MEDIA_ROOT and are
+# streamed by Django after an access check.
+
+server {
+    listen 80;
+    server_name univentory.example.ku.ac.ae;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name univentory.example.ku.ac.ae;
+
+    ssl_certificate     /etc/ssl/univentory/fullchain.pem;
+    ssl_certificate_key /etc/ssl/univentory/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    client_max_body_size 12m;          # 10 MB evidence limit plus form overhead
+    add_header X-Content-Type-Options nosniff always;
+
+    location /static/ {
+        alias /srv/univentory/staticfiles/;
+        expires 7d;
+        access_log off;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 75s;        # covers the 60 s interactive AI deadline
+    }
+}

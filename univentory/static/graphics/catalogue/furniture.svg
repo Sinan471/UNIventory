@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" role="img" aria-hidden="true" class="illustration">
+<title>Furniture</title>
+<path d="M120 150 30 120l90-30 90 30z" fill="#E6E1D5"/><path d="M30 120v8l90 30v-8z" fill="#D6CFBE"/><path d="M210 120v8l-90 30v-8z" fill="#CBC3B0"/>
+
+<path d="M84 104 124 117l36-12-40-13z" fill="#146C60"/>
+<path d="M84 104v6l40 13v-6z" fill="#0F574D"/><path d="M160 105v6l-36 12v-6z" fill="#0B4A42"/>
+<path d="M84 104V60l8 3v44z" fill="#102A43"/><path d="M92 63l32-10v44l-32 10z" fill="#2E5E7E"/>
+<path d="M88 110v26M124 123v24M156 112v24M120 105v22" stroke="#102A43" stroke-width="4" stroke-linecap="round"/>
+<circle cx="168" cy="82" r="10" fill="#C98A1B"/>
+</svg>

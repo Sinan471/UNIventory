@@ -1,0 +1,37 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{% if listing %}{% trans "Edit listing" %}{% else %}{% trans "Prepare listing" %}{% endif %}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'inventory:my_assets' %}">{% trans "My Assets" %}</a> / <a href="{% url 'inventory:asset_detail' asset.pk %}">{{ asset.asset_code }}</a> / {% if listing %}{% trans "Edit listing" %}{% else %}{% trans "Prepare listing" %}{% endif %}</nav>
+<div class="page-head">
+  <div><h1>{% if listing %}{% trans "Edit listing" %}{% else %}{% trans "Prepare a listing" %}{% endif %}</h1>
+    <span class="muted">{{ asset.title }} · {% blocktrans with n=releasable|qty:asset unit=asset.get_unit_display %}{{ n }} {{ unit }} unclaimed in use or available{% endblocktrans %}</span></div>
+</div>
+{% include "shared/components/form_errors.html" %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="grid-2">
+    <fieldset class="fieldset-card">
+      <legend>{% trans "What other departments will see" %}</legend>
+      <div class="form-grid">
+        {% for field in form %}
+          {% if field.name == "public_description" or field.name == "collection_info" or field.name == "title" %}
+            {% include "shared/components/field.html" with span=True %}
+          {% else %}{% include "shared/components/field.html" %}{% endif %}
+        {% endfor %}
+      </div>
+    </fieldset>
+    <aside class="panel">
+      <h2>{% trans "What happens next" %}</h2>
+      <ol class="small" style="padding-inline-start:var(--s-5);margin:0">
+        <li>{% trans "Save the listing as a draft." %}</li>
+        <li>{% trans "Submit it for release review by your Department Representative." %}</li>
+        <li>{% trans "After approval, publish it. Only safety-cleared, Available units can be reserved." %}</li>
+      </ol>
+    </aside>
+  </div>
+  <div class="form-actions">
+    <a class="btn btn-secondary" href="{% if listing %}{% url 'catalogue:listing_detail' listing.pk %}{% else %}{% url 'inventory:asset_detail' asset.pk %}{% endif %}">{% trans "Cancel" %}</a>
+    <button class="btn btn-primary" type="submit">{% trans "Save draft" %}</button>
+  </div>
+</form>
+{% endblock %}

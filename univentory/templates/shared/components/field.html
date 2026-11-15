@@ -1,0 +1,18 @@
+{% load ui %}{# Renders one bound field with label, help and error (IF-02). #}
+{% if field.is_hidden %}{{ field }}{% else %}
+<div class="field{% if field.errors %} has-error{% endif %}{% if span %} span-2{% endif %}">
+  {% if field.widget_type == "checkbox" %}
+    <label class="check" for="{{ field.id_for_label }}">{{ field }} {{ field.label }}</label>
+  {% elif field.widget_type == "radioselect" %}
+    <span class="label" id="{{ field.auto_id }}-label">{{ field.label }}{% if field.field.required %}<span class="required" aria-hidden="true">*</span>{% endif %}</span>
+    <ul class="choice-list" role="radiogroup" aria-labelledby="{{ field.auto_id }}-label">
+      {% for radio in field %}<li><label for="{{ radio.id_for_label }}">{{ radio.tag }} {{ radio.choice_label }}</label></li>{% endfor %}
+    </ul>
+  {% else %}
+    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span>{% endif %}</label>
+    {{ field }}
+  {% endif %}
+  {% if field.help_text %}<span class="help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% endif %}
+  {% for error in field.errors %}<span class="error" role="alert">{% icon "alert" "icon-sm" %} {{ error }}</span>{% endfor %}
+</div>
+{% endif %}
