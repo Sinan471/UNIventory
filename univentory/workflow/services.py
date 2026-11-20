@@ -30,7 +30,7 @@ class ApprovalService:
         item.state = states[decision]
         item.version += 1
         item.save(update_fields=["state", "version", "updated_at"])
-        RequestEvent.objects.create(request=item, actor=user, action=f"{item.get_state_display()}: {reason.strip()}"[:32])
+        RequestEvent.objects.create(request=item, actor=user, action=item.get_state_display()[:32])
         audit("request.review", item, user, after={"state": item.state, "decision": decision}, reason=reason)
         from notifications.services import NotificationService
         NotificationService.notify(item.requester, "A decision was recorded on one of your requests. Open My Requests to review it.")

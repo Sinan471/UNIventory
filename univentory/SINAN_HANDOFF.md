@@ -4,6 +4,8 @@ This document describes an incomplete implementation. The branch is not a finish
 
 The demand module records requests and independent need reviews. The exchange module provides an initial reservation, transfer, receipt and discrepancy flow using the shared inventory ledger. Care includes defect reporting and an initial maintenance workflow. Final actions currently cover a limited donation, recycling and disposal path. Audit, in-app notifications and a scheduled hold-expiry work item are also present.
 
+For the Phase 6 demo, see `PHASE6_DEMO.md`. A synthetic single-item request, approval, hold, transfer approval, dispatch and receipt were exercised through the browser. The automated tests also exercise a partial receipt and repeated submissions. These checks do not replace the outstanding tests below.
+
 ## Local configuration
 
 Follow the existing README for a local installation and migrations. To use the new release-review and audit implementations instead of the labelled fixtures, set these environment variables before starting the application:

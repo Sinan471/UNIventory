@@ -1,5 +1,6 @@
 import uuid
 from django.db.models import Q
+from decimal import Decimal
 from django.shortcuts import get_object_or_404, redirect, render
 from catalogue.services import CatalogueQueryService
 from core.contracts import DomainError
@@ -51,7 +52,17 @@ def detail(request, pk):
     row = get_object_or_404(visible_reservations(request.user).select_related("request", "listing__asset", "listing__department"), pk=pk)
     source_rep = AccessPolicy.has_role(request.user, Role.DEPT_REP, row.listing.department_id) and request.user.pk != row.requested_by_id
     dest_rep = AccessPolicy.has_role(request.user, Role.DEPT_REP, row.request.department_id) and request.user.pk != row.requested_by_id
-    can_dispatch = AccessPolicy.can_edit_asset(request.user, row.listing.asset)
+    can_dispatch = AccessPolicy.has_role(request.user, Role.CUSTODIAN, row.listing.department_id) and AccessPolicy.can_edit_asset(request.user, row.listing.asset)
+    can_resolve = can_dispatch or source_rep
+    shipments = list(row.consignments.select_related("destination", "receiver").prefetch_related("receipts", "resolutions"))
+    dispatched = sum((shipment.quantity for shipment in shipments), Decimal(0))
+    for shipment in shipments:
+        shipment.received_quantity = sum((event.quantity for event in shipment.receipts.all()), Decimal(0))
+        shipment.resolved_quantity = sum((event.quantity for event in shipment.resolutions.all()), Decimal(0))
+        shipment.remaining_quantity = shipment.quantity - shipment.received_quantity - shipment.resolved_quantity
+    can_dispatch = can_dispatch and dispatched < row.quantity
+    context = {"row": row, "source_rep": source_rep, "dest_rep": dest_rep, "can_dispatch": can_dispatch,
+               "can_resolve": can_resolve, "shipments": shipments, "dispatched": dispatched, "undispatched": row.quantity - dispatched}
     form = DispatchForm(request.POST or None, department=row.request.department)
     operation_key = request.POST.get("operation_key", "") if request.method == "POST" else uuid.uuid4().hex
     if request.method == "POST":
@@ -73,11 +84,11 @@ def detail(request, pk):
             elif action == "dispatch" and form.is_valid():
                 TransferService.dispatch(request.user, pk, operation_key=operation_key, **form.cleaned_data)
             else:
-                return render(request, "exchange/detail.html", {"row": row, "form": form, "source_rep": source_rep, "dest_rep": dest_rep, "can_dispatch": can_dispatch, "operation_key": operation_key}, status=422)
+                return render(request, "exchange/detail.html", {**context, "form": form, "operation_key": operation_key}, status=422)
         except DomainError as exc:
-            return domain_error_response(request, exc, "exchange/detail.html", {"row": row, "form": form, "source_rep": source_rep, "dest_rep": dest_rep, "can_dispatch": can_dispatch, "operation_key": operation_key})
+            return domain_error_response(request, exc, "exchange/detail.html", {**context, "form": form, "operation_key": operation_key})
         return redirect("transfer:detail", pk=pk)
-    return render(request, "exchange/detail.html", {"row": row, "form": form, "source_rep": source_rep, "dest_rep": dest_rep, "can_dispatch": can_dispatch, "operation_key": operation_key})
+    return render(request, "exchange/detail.html", {**context, "form": form, "operation_key": operation_key})
 
 
 @active_role_required

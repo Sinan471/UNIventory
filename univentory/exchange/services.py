@@ -6,7 +6,7 @@ from django.utils import timezone
 from catalogue.services import CatalogueQueryService, CatalogueService
 from core.contracts import ActorContext, NotPermitted, StaleVersion, ValidationFailed
 from core.contracts.audit import audit
-from demand.models import ResourceRequest
+from demand.models import RequestEvent, ResourceRequest
 from identity.models import Role
 from identity.policy import AccessPolicy
 from inventory.ledger import InventoryLedger
@@ -27,6 +27,7 @@ class ReservationService:
         if qty <= 0 or qty > need.quantity:
             raise ValidationFailed("Enter a positive quantity no greater than the request.")
         row = Reservation.objects.create(request=need, listing=listing, quantity=qty, requested_by=user)
+        RequestEvent.objects.create(request=need, actor=user, action="Reservation requested")
         audit("reservation.request", row, user, after={"quantity": str(qty), "state": row.state})
         return row
 
@@ -52,6 +53,7 @@ class ReservationService:
         row.state, row.approved_by, row.expires_at = Reservation.State.HELD, user, timezone.now() + timedelta(hours=48)
         row.version += 1
         row.save(update_fields=["state", "approved_by", "expires_at", "version"])
+        RequestEvent.objects.create(request=need, actor=user, action="Reservation held")
         from jobs.services import WorkDispatcher
         WorkDispatcher.schedule_hold_expiry(row)
         audit("reservation.held", row, actor, after={"quantity": str(row.quantity), "expires_at": row.expires_at.isoformat()})
@@ -72,6 +74,7 @@ class ReservationService:
         row.state = Reservation.State.COMMITTED
         row.version += 1
         row.save(update_fields=["state", "version"])
+        RequestEvent.objects.create(request=row.request, actor=user, action="Transfer approved")
         audit("transfer.approve", row, actor, after={"state": row.state})
         return row
 
@@ -132,7 +135,7 @@ class TransferService:
     @transaction.atomic
     def dispatch(user, reservation_id, quantity, receiver, destination, custodian, operation_key):
         row = Reservation.objects.select_for_update().select_related("listing__asset", "request").get(pk=reservation_id)
-        if not AccessPolicy.can_edit_asset(user, row.listing.asset):
+        if not AccessPolicy.has_role(user, Role.CUSTODIAN, row.listing.department_id) or not AccessPolicy.can_edit_asset(user, row.listing.asset):
             raise NotPermitted("Only the assigned source custodian can dispatch.")
         if not operation_key or len(operation_key) > 64:
             raise ValidationFailed("A valid dispatch operation key is required.")
@@ -158,6 +161,7 @@ class TransferService:
                                                  custodian=custodian, dispatched_by=user, operation_key=operation_key)
         actor = ActorContext(user, operation_key=f"dispatch:{consignment.pk}")
         InventoryLedger.dispatch(actor, claim_ref=row.claim_ref, quantity=qty, consignment_ref=consignment.reference, temporary_custodian=user)
+        RequestEvent.objects.create(request=row.request, actor=user, action="Item dispatched")
         audit("transfer.dispatch", consignment, actor, after={"quantity": str(qty)})
         return consignment
 
@@ -189,7 +193,6 @@ class TransferService:
         need.state = ResourceRequest.State.FULFILLED if accepted >= need.quantity else ResourceRequest.State.PARTIAL
         need.version += 1
         need.save(update_fields=["state", "version", "updated_at"])
-        from demand.models import RequestEvent
         RequestEvent.objects.create(request=need, actor=user, action="Receipt accepted")
         audit("transfer.receive", receipt, actor, after={"quantity": str(qty)})
         from notifications.services import NotificationService

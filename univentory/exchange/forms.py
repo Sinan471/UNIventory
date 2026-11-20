@@ -1,5 +1,6 @@
 from django import forms
-from identity.models import AppUser, Location
+from django.db.models import Q
+from identity.models import AppUser, Location, Role, UserRole
 
 
 class QuantityForm(forms.Form):
@@ -14,6 +15,9 @@ class DispatchForm(QuantityForm):
     def __init__(self, *args, department, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["destination"].queryset = Location.objects.active().filter(department=department)
+        grants = UserRole.objects.active().filter(Q(department=department) | Q(department__isnull=True))
+        self.fields["receiver"].queryset = AppUser.objects.filter(is_active=True, pk__in=grants.filter(role__code=Role.RECEIVER).values("user_id"))
+        self.fields["custodian"].queryset = AppUser.objects.filter(is_active=True, pk__in=grants.filter(role__code=Role.CUSTODIAN).values("user_id"))
 
 
 class ResolutionForm(QuantityForm):

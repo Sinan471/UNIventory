@@ -1,7 +1,10 @@
 from datetime import timedelta
 from decimal import Decimal
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.urls import reverse
+from django.urls import resolve
 from django.utils import timezone
 from catalogue.tests import publish
 from core.contracts import NotPermitted, ValidationFailed
@@ -41,6 +44,12 @@ class TransferTests(TestCase):
         replay = TransferService.receive(self.receiver, shipment.pk, 1, "receipt-key")
         self.assertEqual(first.pk, replay.pk)
         self.assertEqual(shipment.receipts.count(), 1)
+        self.assertEqual(list(self.need.events.values_list("action", flat=True)),
+            ["Submitted", "Approved", "Reservation requested", "Reservation held", "Transfer approved", "Item dispatched", "Receipt accepted"])
+        self.client.force_login(self.receiver)
+        page = self.client.get(reverse("transfer:detail", args=[reservation.pk]))
+        self.assertNotContains(page, "Confirm dispatch")
+        self.assertContains(page, "Accepted: 1.000")
         with self.assertRaises(ValidationFailed):
             TransferService.receive(self.receiver, shipment.pk, 2, "receipt-key")
         self.need.refresh_from_db()
@@ -80,3 +89,22 @@ class TransferTests(TestCase):
         row = ReservationService.cancel(self.w.requester, row.pk, row.version, "No longer needed")
         self.assertEqual(row.state, Reservation.State.RELEASED)
         self.assertFalse(AssetPortion.objects.filter(claim_ref=row.claim_ref, allocation=Allocation.HELD).exists())
+
+    def test_transfer_queue_url_does_not_open_catalogue(self):
+        self.assertEqual(resolve(reverse("transfer:queue")).view_name, "transfer:queue")
+
+
+class DemoSetupTests(TestCase):
+    def test_demo_setup_requires_debug(self):
+        with self.assertRaises(CommandError):
+            call_command("seed_transfer_demo")
+
+    @override_settings(DEBUG=True)
+    def test_demo_receiver_setup_is_repeatable(self):
+        from core.testing import department
+        from identity.models import UserRole
+        chemistry = department("CHEM", "Chemistry")
+        receiver = user("omar.custodian", (Role.CUSTODIAN, chemistry))
+        call_command("seed_transfer_demo")
+        call_command("seed_transfer_demo")
+        self.assertEqual(UserRole.objects.active().filter(user=receiver, role__code=Role.RECEIVER, department=chemistry).count(), 1)
