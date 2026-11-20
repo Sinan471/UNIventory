@@ -1,0 +1,2 @@
+{% extends "shared/base.html" %}{% block title %}Reservations and transfers{% endblock %}{% block content %}
+<h1>Reservations and transfers</h1><p>Cases you can review or take part in.</p>{% if rows %}<ul>{% for row in rows %}<li><a href="{% url 'transfer:detail' row.pk %}">{{ row.listing.title }} — {{ row.quantity }}</a> ({{ row.get_state_display }})</li>{% endfor %}</ul>{% else %}<p>No reservations yet.</p>{% endif %}{% endblock %}
