@@ -1,0 +1,11 @@
+ai/
+    migrations/
+    __init__.py
+    admin.py
+    apps.py
+    models.py
+    services.py
+    classification.py
+    tests.py
+    tests/
+        test_classification.py
