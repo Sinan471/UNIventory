@@ -1,4 +1,6 @@
-# Phase 6 request and transfer demonstration
+# Earlier Phase 6 request and transfer demonstration
+
+> This is an earlier transfer scenario. For the integrated demo and current staged personas, start with [DEMO_GUIDE.md](DEMO_GUIDE.md).
 
 This guide uses local synthetic data and development sign-in. It does not demonstrate real university authentication. The AI features are separate team work.
 
@@ -32,3 +34,4 @@ Use the project virtual environment's Python if `python` is unavailable. Run `se
 Use an item with enough free units for the quantity selected. For a partial-receipt demonstration, choose a batch listing with at least two free units, request and dispatch two, then receive one. Outstanding demand should remain one until another receipt is accepted.
 
 Hold expiry is queued, but requires an external scheduler to run `python manage.py run_work` regularly. The demo does not establish that the full project, AI features, production sign-in, PostgreSQL concurrency, or all exception paths are finished.
+

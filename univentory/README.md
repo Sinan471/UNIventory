@@ -7,7 +7,9 @@ the same release (Phase 4–5 design, ADR-01).
 This folder holds the application source. The phase documents at the
 repository root remain the requirements baseline.
 
-## Demo in one command
+## Prepare the demo
+
+Install the dependencies as described in the quick start below before running these commands. The reset deletes the local SQLite database; back up any data you want to keep.
 
 ```bash
 cp .env.example .env
@@ -20,7 +22,11 @@ scenarios and a role-by-role script. A review of the plan against the phase
 documents, the security pass and the remaining open items is in
 [docs/PLAN_REVIEW.md](docs/PLAN_REVIEW.md).
 
-## Status at the start of this branch: Increment 1–2, Jesher's part
+## Historical foundation status
+
+The table and ownership notes below describe the early foundation branch, not the current integrated main branch. Subsequent work added requests, transfers, care, AI fallbacks, sustainability and reporting. See the [demo guide](DEMO_GUIDE.md) and [implementation review](docs/PLAN_REVIEW.md) for the integrated prototype and its known limitations.
+
+### Increment 1–2, Jesher's part
 
 | Part | Owner | State in this branch |
 |------|-------|----------------------|
@@ -149,3 +155,4 @@ Full details: [docs/CONTRACTS.md](docs/CONTRACTS.md).
 * [docs/TRACEABILITY.md](docs/TRACEABILITY.md): requirement to code to test
 * [docs/OPERATIONS.md](docs/OPERATIONS.md): deployment, security configuration, performance
 * [docs/RECOVERY.md](docs/RECOVERY.md): backup and restore procedure
+

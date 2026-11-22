@@ -1,4 +1,6 @@
-# Requests, transfer and care work in progress
+# Historical handoff: requests, transfer and care work in progress
+
+> This handoff describes an earlier development snapshot. Subsequent work was integrated into main; see [DEMO_GUIDE.md](DEMO_GUIDE.md) and [docs/PLAN_REVIEW.md](docs/PLAN_REVIEW.md) for the later demo and implementation review.
 
 This document describes an incomplete implementation. The branch is not a finished Phase 6 submission.
 
@@ -30,3 +32,4 @@ Run `python manage.py run_work` regularly through a supervised scheduler. It pro
 - Responsive, accessibility and visual checks; screenshot evidence; presentation material; and integration with Jessica's AI and reporting modules.
 
 The current tests are useful checks of implemented paths, not proof that all requirements or security and concurrency acceptance criteria have been met.
+
