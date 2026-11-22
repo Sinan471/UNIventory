@@ -39,7 +39,7 @@ def _safe_next(request, candidate: str) -> str:
 # ---------------------------------------------------------------------------
 @require_GET
 def login_page(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and not DevIdentityAdapter.enabled():
         return redirect("core:home")
     oidc = OIDCIdentityAdapter()
     return render(
@@ -112,7 +112,9 @@ def dev_login(request):
     if authed is None:
         return render(request, "identity/login_failed.html", {"reason": _("This account is disabled.")}, status=403)
     login(request, authed)
-    return redirect(_safe_next(request, request.POST.get("next", "")))
+    target_next = _safe_next(request, request.POST.get("next", ""))
+    sep = "&" if "?" in target_next else "?"
+    return redirect(f"{target_next}{sep}as_user={user.pk}")
 
 
 @require_POST

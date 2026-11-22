@@ -17,6 +17,15 @@
   <main class="signin-form" id="main">
     <div class="signin-card">
       <h1>{% trans "Sign in" %}</h1>
+      {% if user.is_authenticated %}
+      <div class="alert alert-info mb-3">
+        {% icon "check-circle" %}
+        <div>
+          {% trans "Active session:" %} <strong>{{ user.display_name }}</strong>.
+          <span class="small muted">{% trans "Clicking any demo profile below opens that role in a new tab." %}</span>
+        </div>
+      </div>
+      {% endif %}
       <div class="sso-box">
         <p class="lede">{% trans "Use your Khalifa University account. You confirm with Microsoft Authenticator on the university page; UNIventory never sees your password." %}</p>
         <form method="post" action="{% url 'identity:sso_start' %}">
@@ -32,14 +41,14 @@
       {% if dev_enabled %}
       <section class="dev-panel" aria-labelledby="dev-h">
         <h2 id="dev-h">{% trans "Choose a demo profile" %}</h2>
-        <p class="small muted">{% trans "One person for each job. Available on this development server only." %}</p>
+        <p class="small muted">{% trans "One person for each job. Clicking any profile opens in a separate tab with live shared data." %}</p>
         {% if dev_personas %}
           <ul class="dev-users">
           {% for label, people in dev_personas %}{% for p in people %}
             <li>
-              <form method="post" action="{% url 'identity:dev_login' %}">
+              <form method="post" action="{% url 'identity:dev_login' %}" target="_blank">
                 {% csrf_token %}<input type="hidden" name="user_id" value="{{ p.user.pk }}"><input type="hidden" name="next" value="{{ next }}">
-                <button class="persona" type="submit">
+                <button class="persona" type="submit" data-no-busy title="{% trans 'Open in new tab' %}">
                   <span class="avatar" aria-hidden="true">{{ p.user|initials }}</span>
                   <span><span class="who">{{ p.name }}</span><span class="role">{{ label }}</span><span class="what">{{ p.summary }}</span></span>
                 </button>
