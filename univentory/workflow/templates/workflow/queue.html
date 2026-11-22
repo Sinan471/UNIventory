@@ -1,4 +1,36 @@
-{% extends "shared/base.html" %}{% block title %}Approvals{% endblock %}{% block content %}
-<h1>Approvals</h1><p>Requests awaiting review in your departments. <a href="{% url 'transfer:queue' %}">Review reservations and transfers</a> · <a href="{% url 'final_actions:list' %}">Review final actions</a></p>
-{% if items %}<div class="table-wrap"><table><thead><tr><th>Request</th><th>Requester</th><th>Department</th><th>Quantity</th></tr></thead><tbody>{% for item in items %}<tr><td><a href="{% url 'workflow:review' item.pk %}">{{ item.title }}</a></td><td>{{ item.requester.display_name }}</td><td>{{ item.department }}</td><td>{{ item.quantity }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p>No requests are waiting for your review.</p>{% endif %}
-<h2>Listing release reviews</h2>{% if releases %}<ul>{% for review in releases %}<li><a href="{% url 'workflow:release_review' review.pk %}">{{ review.listing.title }}</a> — {{ review.listing.department }}</li>{% endfor %}</ul>{% else %}<p>No listing releases are waiting for your review.</p>{% endif %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Approvals{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Approvals</h1><p>Decisions for your departments. Your own requests never appear here.</p></div>
+  <div class="actions"><a class="btn btn-secondary" href="{% url 'transfer:queue' %}">{% icon "truck" %} Holds and transfers</a><a class="btn btn-secondary" href="{% url 'final_actions:list' %}">{% icon "recycle" %} Final actions</a></div>
+</div>
+
+<h2 class="section-title">Needs to approve</h2>
+{% if items %}
+<div class="table-wrap mb-5">
+  <table class="data">
+    <thead><tr><th>Request</th><th>Requester</th><th>Department</th><th class="num">Quantity</th><th>Needed by</th><th></th></tr></thead>
+    <tbody>{% for item in items %}
+      <tr><td><div class="with-thumb"><span class="thumb-sm"><img src="{% if item.listing %}{% item_art item.listing %}{% else %}{% item_art item.title %}{% endif %}" alt="" width="160" height="120" loading="lazy"></span><a class="row-title" href="{% url 'workflow:review' item.pk %}">{{ item.title }}</a></div>{% if item.urgent %} <span class="badge badge-danger">Urgent</span>{% endif %}</td>
+        <td>{{ item.requester.display_name }}</td><td>{{ item.department.name }}</td><td class="num">{{ item.quantity|qty }}</td>
+        <td>{{ item.needed_by|date:"j M Y"|default:"Not set" }}</td><td><a class="btn btn-primary btn-sm" href="{% url 'workflow:review' item.pk %}">Review</a></td></tr>
+    {% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty empty-inline mb-5">No requests are waiting for your decision.</div>{% endif %}
+
+<h2 class="section-title" id="releases">Listings to release</h2>
+{% if releases %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Listing</th><th>Department</th><th>Asked by</th><th class="num">Offered</th><th></th></tr></thead>
+    <tbody>{% for review in releases %}
+      <tr><td><div class="with-thumb"><span class="thumb-sm"><img src="{% item_art review.listing %}" alt="" width="160" height="120" loading="lazy"></span><a class="row-title" href="{% url 'workflow:release_review' review.pk %}">{{ review.listing.title }}</a></div></td><td>{{ review.listing.department.name }}</td>
+        <td>{{ review.requested_by.display_name }}</td><td class="num">{{ review.listing.offered_quantity|qty }}</td>
+        <td><a class="btn btn-primary btn-sm" href="{% url 'workflow:release_review' review.pk %}">Review</a></td></tr>
+    {% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty empty-inline">No listings are waiting for release.</div>{% endif %}
+{% endblock %}

@@ -3,49 +3,54 @@
 {% block shell %}
 <div class="signin">
   <section class="signin-art" aria-hidden="true">
-    <div class="brand" style="color:#fff;padding:0"><span class="brand-mark">{% icon "box" %}</span> UNIventory</div>
+    <div class="brand">{% include "shared/logo.html" with id="signin" %}<span class="word">UNIventory<small>{% trans "Khalifa University" %}</small></span></div>
     <div>
       <h2>{% trans "Find it on campus before you buy it." %}</h2>
-      <p>{% trans "One accountable place to reuse, transfer and care for Khalifa University resources." %}</p>
+      <p>{% trans "Chairs, microscopes, laptops and lab kit sit idle in one department while another orders new. UNIventory lists them, moves them with the right approvals and keeps their history." %}</p>
       <div class="art-grid">
-        {% for slug in "it furniture lab av office tools"|split_words %}<div><img src="{% static 'graphics/catalogue/' %}{{ slug }}.svg" alt="" width="96" height="80"></div>{% endfor %}
+        {% for slug in "office-chair monitor microscope projector laptop drill"|split_words %}<div><img src="{% static 'graphics/items/' %}{{ slug }}.svg" alt="" width="120" height="90"></div>{% endfor %}
       </div>
     </div>
-    <p class="small" style="color:#9FB0BF">Khalifa University · {% trans "Internal staff system" %}</p>
+    <p class="small">{% trans "Internal staff system. Records stay inside Khalifa University." %}</p>
   </section>
+
   <main class="signin-form" id="main">
     <div class="signin-card">
-      <div class="brand" style="padding:0 0 var(--s-5)"><span class="brand-mark">{% icon "box" %}</span> UNIventory</div>
       <h1>{% trans "Sign in" %}</h1>
-      <p class="muted">{% trans "Use your Khalifa University account. You will confirm with Microsoft Authenticator on the university sign-in page. UNIventory never sees your password." %}</p>
-      <form method="post" action="{% url 'identity:sso_start' %}">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}">
-        <button class="btn btn-primary btn-block" type="submit" {% if not sso_configured %}aria-describedby="sso-off"{% endif %}>{% icon "lock" %} {% trans "Continue with KU sign-in" %}</button>
-      </form>
-      {% if not sso_configured %}
-        <p class="small muted mt-2" id="sso-off">{% trans "University sign-in is not configured on this server yet (KU_OIDC_* settings)." %}</p>
-      {% endif %}
-
-      {% if dev_enabled %}
-      <div class="dev-panel">
-        <h2>{% icon "alert" "icon-sm" %} {% trans "Development sign-in (test adapter, not KU SSO)" %}</h2>
-        <p class="small" style="color:var(--attention-ink)">{% trans "Only available with DEBUG on. Accounts below are synthetic seed users." %}</p>
-        {% if dev_users %}
-        <ul class="dev-users">
-          {% for u in dev_users %}
-          <li>
-            <form method="post" action="{% url 'identity:dev_login' %}">
-              {% csrf_token %}<input type="hidden" name="user_id" value="{{ u.pk }}"><input type="hidden" name="next" value="{{ next }}">
-              <button class="btn btn-secondary btn-block" type="submit"><span>{{ u.display_name }}</span><span class="small muted">{{ u.username }}</span></button>
-            </form>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="small mb-0">{% trans "No development users yet. Run" %} <code>python manage.py seed_demo</code>.</p>
+      <div class="sso-box">
+        <p class="lede">{% trans "Use your Khalifa University account. You confirm with Microsoft Authenticator on the university page; UNIventory never sees your password." %}</p>
+        <form method="post" action="{% url 'identity:sso_start' %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}">
+          <button class="btn btn-primary btn-block" type="submit" {% if not sso_configured %}aria-describedby="sso-off"{% endif %}>{% icon "lock" %} {% trans "Continue with KU sign-in" %}</button>
+        </form>
+        {% if not sso_configured %}
+          <p class="small muted mt-2" id="sso-off">{% trans "University sign-in is not configured on this server yet (KU_OIDC_* settings)." %}</p>
         {% endif %}
       </div>
+
+      {% if dev_enabled %}
+      <section class="dev-panel" aria-labelledby="dev-h">
+        <h2 id="dev-h">{% trans "Choose a demo profile" %}</h2>
+        <p class="small muted">{% trans "One person for each job. Available on this development server only." %}</p>
+        {% if dev_personas %}
+          <ul class="dev-users">
+          {% for label, people in dev_personas %}{% for p in people %}
+            <li>
+              <form method="post" action="{% url 'identity:dev_login' %}">
+                {% csrf_token %}<input type="hidden" name="user_id" value="{{ p.user.pk }}"><input type="hidden" name="next" value="{{ next }}">
+                <button class="persona" type="submit">
+                  <span class="avatar" aria-hidden="true">{{ p.user|initials }}</span>
+                  <span><span class="who">{{ p.name }}</span><span class="role">{{ label }}</span><span class="what">{{ p.summary }}</span></span>
+                </button>
+              </form>
+            </li>
+          {% endfor %}{% endfor %}
+          </ul>
+        {% else %}
+          <p class="small mb-0">{% trans "No demo accounts yet. Run" %} <code>python manage.py demo_reset --yes</code>.</p>
+        {% endif %}
+      </section>
       {% endif %}
     </div>
   </main>

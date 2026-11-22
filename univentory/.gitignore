@@ -8,3 +8,8 @@ protected_media/
 backups/
 staticfiles/
 .coverage
+
+# Local tooling (installed agent skills)
+.agents/
+.claude/
+skills-lock.json

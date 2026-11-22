@@ -1,2 +1,23 @@
-{% extends "shared/base.html" %}{% block title %}Notifications{% endblock %}{% block content %}<h1>Notifications</h1>
-{% for item in items %}<section class="fieldset-card"><p>{{ item.message }}</p><p>{{ item.created_at }} · {% if item.read_at %}Read{% else %}Unread{% endif %}</p>{% if not item.read_at %}<form method="post" action="{% url 'notifications:read' item.pk %}">{% csrf_token %}<button class="button">Mark as read</button></form>{% endif %}</section>{% empty %}<p>You have no notifications.</p>{% endfor %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Notifications</h1><p>Updates on your requests, decisions and deliveries.</p></div>
+  {% if unread_count %}<form method="post" action="{% url 'notifications:read_all' %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">{% icon "check" %} Mark all as read</button></form>{% endif %}
+</div>
+<nav class="tabs" aria-label="Filter">
+  <a class="tab" href="?" {% if not unread_only %}aria-current="page"{% endif %}>All</a>
+  <a class="tab" href="?filter=unread" {% if unread_only %}aria-current="page"{% endif %}>Unread <span class="count">{{ unread_count }}</span></a>
+</nav>
+{% if items %}
+<section class="panel panel-flush">
+  {% for item in items %}
+  <div class="notice{% if not item.read_at %} is-unread{% endif %}">
+    <span class="pip" aria-hidden="true"></span>
+    <div><p class="notice-msg">{{ item.message }}</p><span class="notice-when">{{ item.created_at|date:"j M Y, H:i" }}{% if not item.read_at %}<span class="visually-hidden">, unread</span>{% endif %}</span></div>
+    {% if not item.read_at %}<form method="post" action="{% url 'notifications:read' item.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" type="submit">Mark read</button></form>{% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% else %}<div class="empty"><h2>{% if unread_only %}No unread notifications{% else %}No notifications yet{% endif %}</h2><p class="muted">You will see updates here when someone decides or delivers something that involves you.</p></div>{% endif %}
+{% endblock %}

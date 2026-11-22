@@ -49,7 +49,7 @@ class TransferTests(TestCase):
         self.client.force_login(self.receiver)
         page = self.client.get(reverse("transfer:detail", args=[reservation.pk]))
         self.assertNotContains(page, "Confirm dispatch")
-        self.assertContains(page, "Accepted: 1.000")
+        self.assertContains(page, "Accepted 1 on")
         with self.assertRaises(ValidationFailed):
             TransferService.receive(self.receiver, shipment.pk, 2, "receipt-key")
         self.need.refresh_from_db()

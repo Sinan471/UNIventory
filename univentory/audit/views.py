@@ -38,9 +38,7 @@ def export(request):
     response["Content-Disposition"] = 'attachment; filename="audit.csv"'
     writer = csv.writer(response)
     writer.writerow(["Time", "Actor", "Action", "Target type", "Target ID", "Outcome", "Reason"])
-    def safe(value):
-        value = str(value or "")
-        return "'" + value if value.lstrip().startswith(("=", "+", "-", "@")) else value
+    from core.csvsafe import safe_cell as safe
     for row in records(request).iterator():
         writer.writerow([safe(row.occurred_at.isoformat()), safe(row.actor_id), safe(row.action), safe(row.target_type), safe(row.target_id), safe(row.outcome), safe(row.reason)])
     return response

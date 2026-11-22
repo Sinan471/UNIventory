@@ -1,6 +1,6 @@
 {% load i18n ui %}
 <div class="page-head">
-  <div><span class="eyebrow">{% trans "Administration" %}</span><h1>{{ heading }}</h1></div>
+  <div><h1>{{ heading }}</h1><p>{% trans "Administration. Changes are logged and never grant business approval power." %}</p></div>
   {% if action_url %}<div class="actions"><a class="btn btn-primary" href="{{ action_url }}">{% icon "plus" %} {{ action_label }}</a></div>{% endif %}
 </div>
 <nav class="tabs" aria-label="{% trans 'Administration sections' %}">

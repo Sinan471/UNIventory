@@ -8,6 +8,10 @@ _tmp = tempfile.mkdtemp(prefix="univentory-test-")
 os.environ.setdefault("DATABASE_URL", "sqlite:///" + os.path.join(_tmp, "dev.sqlite3").replace("\\", "/"))
 os.environ.setdefault("UNIVENTORY_PROTECTED_MEDIA_ROOT", os.path.join(_tmp, "protected"))
 os.environ.setdefault("UNIVENTORY_BACKUP_DIR", os.path.join(_tmp, "backups"))
+# Tests are written against the labelled fixture adapters; tests that need
+# the real services switch explicitly. A developer's .env must not leak in.
+os.environ["UNIVENTORY_RELEASE_APPROVALS_ADAPTER"] = "core.contracts.fixtures.FixtureReleaseApprovals"
+os.environ["UNIVENTORY_AUDIT_ADAPTER"] = "core.contracts.fixtures.LoggingAuditSink"
 
 from .settings import *  # noqa: E402,F401,F403
 

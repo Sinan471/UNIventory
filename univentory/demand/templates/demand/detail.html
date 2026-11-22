@@ -1,12 +1,89 @@
-{% extends "shared/base.html" %}
+{% extends "shared/base.html" %}{% load ui demand_ui ai_ui %}
 {% block title %}{{ item.title }}{% endblock %}
 {% block content %}
-<nav class="breadcrumb"><a href="{% url 'demand:list' %}">My requests</a> / {{ item.title }}</nav>
-<div class="page-head"><div><h1>{{ item.title }}</h1><p>{{ item.get_state_display }} · {{ item.department }}</p></div>{% if item.state == 'DRAFT' or item.state == 'RETURNED' %}<a class="button" href="{% url 'demand:edit' item.pk %}">Edit request</a>{% endif %}</div>
-<section class="fieldset-card"><h2>Need</h2><p>{{ item.purpose|linebreaksbr }}</p><p><strong>Quantity:</strong> {{ item.quantity }}</p><p><strong>Needed by:</strong> {{ item.needed_by|default:"Not specified" }}</p>{% if item.specifications %}<p><strong>Specifications:</strong> {{ item.specifications }}</p>{% endif %}{% if item.urgent %}<p><strong>Urgent:</strong> {{ item.urgent_reason }}</p>{% endif %}{% if item.listing %}<p><strong>Related listing:</strong> {{ item.listing.title }}</p>{% endif %}</section>
-<p>Accepted: {{ item.accepted_quantity }} · Outstanding: {{ item.outstanding_quantity }}</p>
-{% if item.state == 'APPROVED' or item.state == 'PARTIAL' %}{% if item.listing %}<p><a class="button button-primary" href="{% url 'transfer:reserve' item.pk %}">Request reservation</a></p>{% endif %}{% endif %}<p><a href="{% url 'transfer:queue' %}">View reservations and transfers</a></p>
-<section class="fieldset-card"><h2>History</h2><ol>{% for event in item.events.all %}<li>{{ event.occurred_at|date:"d M Y H:i" }} — {{ event.action }} by {{ event.actor.display_name }}</li>{% endfor %}</ol></section>
-{% if item.decisions.all %}<section class="fieldset-card"><h2>Review decisions</h2>{% for decision in item.decisions.all %}<p>{{ decision.decided_at|date:"d M Y H:i" }} — {{ decision.decision }} by {{ decision.actor.display_name }}{% if decision.reason %}: {{ decision.reason }}{% endif %}</p>{% endfor %}</section>{% endif %}
-{% if item.state == 'DRAFT' or item.state == 'SUBMITTED' or item.state == 'RETURNED' %}<form method="post" action="{% url 'demand:cancel' item.pk %}">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}"><button class="button" type="submit">Cancel request</button></form>{% endif %}
+<nav class="breadcrumb"><a href="{% url 'demand:list' %}">My requests</a><span class="sep">/</span><span>{{ item.title }}</span></nav>
+<div class="page-head">
+  <div class="with-thumb"><span class="thumb-sm thumb-lg"><img src="{% if item.listing %}{% item_art item.listing %}{% else %}{% item_art item.title %}{% endif %}" alt="" width="160" height="120"></span><div>
+    <h1>{{ item.title }}</h1>
+    <div class="meta-row">
+      <span>{% status_badge item.state item.get_state_display %}</span>
+      {% if item.urgent %}<span><span class="badge badge-danger">Urgent</span></span>{% endif %}
+      <span>{% icon "map-pin" %} {{ item.department.name }}</span>
+      <span>{% icon "history" %} Needed by {{ item.needed_by|date:"j M Y"|default:"no date set" }}</span>
+    </div>
+  </div></div>
+  <div class="actions">
+    {% if item.state == 'DRAFT' or item.state == 'RETURNED' %}<a class="btn btn-secondary" href="{% url 'demand:edit' item.pk %}">{% icon "edit" %} Edit request</a>{% endif %}
+    {% if item.state == 'APPROVED' or item.state == 'PARTIAL' %}{% if item.listing %}<a class="btn btn-primary" href="{% url 'transfer:reserve' item.pk %}">{% icon "lock" %} Request a reservation</a>{% endif %}{% endif %}
+  </div>
+</div>
+
+{% request_progress item as stages %}
+<ol class="track" aria-label="Progress of this request">
+  {% for label, status in stages %}<li class="{{ status }}"{% if status == 'current' %} aria-current="step"{% endif %}>{{ label }}</li>{% endfor %}
+</ol>
+
+<div class="grid-2">
+  <div class="stack">
+    {% quantity_breakdown item as q %}
+    <section class="panel">
+      <div class="panel-head"><h2>Quantities</h2><p>Only units the receiver accepts count towards this need. A hold or a dispatch does not.</p></div>
+      <dl class="facts">
+        <div><dt>Requested</dt><dd class="num">{{ q.requested|qty }}</dd></div>
+        <div><dt>Held or committed</dt><dd class="num">{{ q.held|qty }}</dd></div>
+        <div><dt>Dispatched</dt><dd class="num">{{ q.dispatched|qty }}</dd></div>
+        <div><dt>Accepted</dt><dd class="num">{{ q.accepted|qty }}</dd></div>
+        <div><dt>Still needed</dt><dd class="num strong">{{ q.outstanding|qty }}</dd></div>
+      </dl>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>The need</h2></div>
+      <div class="prose"><p>{{ item.purpose }}</p></div>
+      <dl class="facts-list mt-4">
+        <dt>Category</dt><dd>{{ item.category.name|default:"Not set" }}</dd>
+        <dt>Minimum condition</dt><dd>{{ item.get_min_condition_display }}</dd>
+        <dt>Deliver to</dt><dd>{{ item.destination|default:"Not set" }}</dd>
+        <dt>Specifications</dt><dd>{{ item.specifications|default:"None given" }}</dd>
+        {% if item.urgent %}<dt>Why it is urgent</dt><dd>{{ item.urgent_reason }}</dd>{% endif %}
+        <dt>Item asked for</dt><dd>{% if item.listing %}<a href="{% url 'catalogue:listing_detail' item.listing.pk %}">{{ item.listing.title }}</a>{% else %}Not chosen yet{% endif %}</dd>
+      </dl>
+    </section>
+    {% match_panel item %}
+    {% if item.reservations.all %}
+    <section class="panel panel-flush">
+      <div class="panel-head"><h2>Reservations</h2></div>
+      <table class="data mt-4"><thead><tr><th>Item</th><th class="num">Quantity</th><th>Status</th><th></th></tr></thead><tbody>
+      {% for r in item.reservations.all %}<tr><td>{{ r.listing.title }}</td><td class="num">{{ r.quantity|qty }}</td><td>{% status_badge r.state r.get_state_display %}</td><td><a href="{% url 'transfer:detail' r.pk %}">Open case</a></td></tr>{% endfor %}
+      </tbody></table>
+    </section>
+    {% endif %}
+  </div>
+  <aside class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>History</h2></div>
+      <ol class="timeline">
+        {% for event in item.events.all reversed %}
+        <li><span class="dot"></span><span class="when">{{ event.occurred_at|date:"j M Y, H:i" }}</span><span class="what">{{ event.action }}</span><br><span class="who">{{ event.actor.display_name }}</span></li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% if item.decisions.all %}
+    <section class="panel">
+      <div class="panel-head"><h2>Review decisions</h2></div>
+      <ol class="timeline">
+        {% for decision in item.decisions.all %}
+        <li><span class="dot"></span><span class="when">{{ decision.decided_at|date:"j M Y, H:i" }}</span><span class="what">{{ decision.decision|capfirst }}</span><br><span class="who">{{ decision.actor.display_name }}</span>{% if decision.reason %}<p class="small mt-2 mb-0">{{ decision.reason }}</p>{% endif %}</li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+    {% if item.state == 'DRAFT' or item.state == 'SUBMITTED' or item.state == 'RETURNED' %}
+    <form method="post" action="{% url 'demand:cancel' item.pk %}" class="panel panel-tight">
+      {% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}">
+      <p class="small muted">Cancelling closes this request. Nothing has been reserved yet.</p>
+      <button class="btn btn-danger-outline btn-sm" type="submit">{% icon "x" %} Cancel request</button>
+    </form>
+    {% endif %}
+  </aside>
+</div>
 {% endblock %}

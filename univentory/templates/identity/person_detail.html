@@ -3,7 +3,7 @@
 {% block content %}
 <nav class="breadcrumb"><a href="{% url 'identity:people' %}">{% trans "People and roles" %}</a> / {{ person.display_name }}</nav>
 <div class="page-head">
-  <div><h1>{{ person.display_name }}</h1><span class="muted">{{ person.email }} · {% if person.identity_issuer == "dev-test" %}<span class="badge badge-test">{% trans "Development account" %}</span>{% else %}{% trans "University identity" %}{% endif %}</span></div>
+  <div><h1>{{ person.display_name }}</h1><span class="muted">{{ person.email }}, {% if person.identity_issuer == "dev-test" %}<span class="badge badge-test">{% trans "Development account" %}</span>{% else %}{% trans "University identity" %}{% endif %}</span></div>
   <div class="actions">{% if person.is_active %}{% trans "Access enabled" as l %}{% tone_badge "success" l %}{% else %}{% trans "Access disabled" as l %}{% tone_badge "danger" l %}{% endif %}</div>
 </div>
 <div class="grid-2">
@@ -15,16 +15,16 @@
         <tbody>
         {% for g in grants %}
           <tr>
-            <td><strong>{{ g.role.name }}</strong><div class="small muted">{% trans "Granted" %} {{ g.granted_at|date:"j M Y" }}{% if g.granted_by %} · {{ g.granted_by }}{% endif %}</div></td>
+            <td><strong>{{ g.role.name }}</strong><div class="small muted">{% trans "Granted" %} {{ g.granted_at|date:"j M Y" }}{% if g.granted_by %}, {{ g.granted_by }}{% endif %}</div></td>
             <td>{% if g.department %}{{ g.department.name }}{% else %}{% trans "Campus-wide" %}{% endif %}</td>
-            <td>{% if g.is_active %}{% trans "Active" as l %}{% tone_badge "success" l %}{% elif g.revoked_at %}{% trans "Revoked" as l %}{% tone_badge "neutral" l %}<div class="small muted">{{ g.revoked_at|date:"j M Y H:i" }} · {{ g.reason }}</div>{% else %}{% trans "Not in effect" as l %}{% tone_badge "attention" l %}{% endif %}</td>
+            <td>{% if g.is_active %}{% trans "Active" as l %}{% tone_badge "success" l %}{% elif g.revoked_at %}{% trans "Revoked" as l %}{% tone_badge "neutral" l %}<div class="small muted">{{ g.revoked_at|date:"j M Y H:i" }}, {{ g.reason }}</div>{% else %}{% trans "Not in effect" as l %}{% tone_badge "attention" l %}{% endif %}</td>
             <td>{% if g.is_active %}
               <button class="btn btn-secondary btn-sm" type="button" data-dialog-open="revoke-{{ g.pk }}">{% trans "Revoke" %}</button>
               <dialog class="dialog" id="revoke-{{ g.pk }}" aria-labelledby="revoke-{{ g.pk }}-t">
                 <form method="post" action="{% url 'identity:revoke_grant' g.pk %}">{% csrf_token %}
                   <div class="dialog-head"><h2 id="revoke-{{ g.pk }}-t">{% trans "Revoke role?" %}</h2><button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
                   <div class="dialog-body">
-                    <dl class="effect-list"><dt>{% trans "Person" %}</dt><dd>{{ person.display_name }}</dd><dt>{% trans "Role" %}</dt><dd>{{ g.role.name }}{% if g.department %} · {{ g.department.name }}{% endif %}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "Applies to their next action, including an open session." %}</dd></dl>
+                    <dl class="effect-list"><dt>{% trans "Person" %}</dt><dd>{{ person.display_name }}</dd><dt>{% trans "Role" %}</dt><dd>{{ g.role.name }}{% if g.department %}, {{ g.department.name }}{% endif %}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "Applies to their next action, including an open session." %}</dd></dl>
                     <div class="field mt-4"><label for="reason-{{ g.pk }}">{% trans "Reason" %}<span class="required">*</span></label><input id="reason-{{ g.pk }}" type="text" name="reason" required maxlength="255"></div>
                   </div>
                   <div class="dialog-foot"><button class="btn btn-secondary" type="button" data-dialog-close>{% trans "Cancel" %}</button><button class="btn btn-danger" type="submit">{% trans "Revoke role" %}</button></div>

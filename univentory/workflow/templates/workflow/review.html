@@ -1,6 +1,44 @@
-{% extends "shared/base.html" %}{% block title %}Review request{% endblock %}{% block content %}
-<nav class="breadcrumb"><a href="{% url 'workflow:queue' %}">Approvals</a> / Review</nav><h1>{{ item.title }}</h1><p>{{ item.requester.display_name }} · {{ item.department }} · {{ item.get_state_display }}</p>
-<section class="fieldset-card"><h2>Need</h2><p>{{ item.purpose|linebreaksbr }}</p><p>Quantity: {{ item.quantity }}</p><p>Specifications: {{ item.specifications|default:"Not specified" }}</p><p>Needed by: {{ item.needed_by|default:"Not specified" }}</p>{% if item.urgent %}<p>Urgent: {{ item.urgent_reason }}</p>{% endif %}</section>
-{% if domain_error %}<div class="alert alert-error" role="alert">{{ domain_error.message }}</div>{% endif %}
-{% if item.state == 'SUBMITTED' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}"><label for="reason">Reason (required to return or reject)</label><textarea id="reason" name="reason" rows="3">{{ request.POST.reason }}</textarea><p><button class="button button-primary" name="decision" value="approve">Approve need</button> <button class="button" name="decision" value="return">Return for revision</button> <button class="button" name="decision" value="reject">Reject</button></p></form>{% endif %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Review request{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'workflow:queue' %}">Approvals</a><span class="sep">/</span><span>{{ item.title }}</span></nav>
+<div class="page-head">
+  <div><h1>{{ item.title }}</h1>
+    <div class="meta-row"><span>{% status_badge item.state item.get_state_display %}</span>{% if item.urgent %}<span><span class="badge badge-danger">Urgent</span></span>{% endif %}
+      <span>{% icon "user" %} {{ item.requester.display_name }}</span><span>{% icon "map-pin" %} {{ item.department.name }}</span></div>
+  </div>
+</div>
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head"><h2>The need</h2></div>
+    <div class="prose"><p>{{ item.purpose }}</p></div>
+    <dl class="facts mt-4">
+      <div><dt>Quantity</dt><dd class="num">{{ item.quantity|qty }}</dd></div>
+      <div><dt>Category</dt><dd>{{ item.category.name|default:"Not set" }}</dd></div>
+      <div><dt>Minimum condition</dt><dd>{{ item.get_min_condition_display }}</dd></div>
+      <div><dt>Deliver to</dt><dd>{{ item.destination|default:"Not set" }}</dd></div>
+      <div><dt>Needed by</dt><dd>{{ item.needed_by|date:"j M Y"|default:"Not set" }}</dd></div>
+      <div><dt>Specifications</dt><dd>{{ item.specifications|default:"None given" }}</dd></div>
+      {% if item.listing %}<div><dt>Item asked for</dt><dd><a href="{% url 'catalogue:listing_detail' item.listing.pk %}">{{ item.listing.title }}</a></dd></div>{% endif %}
+      {% if item.urgent %}<div><dt>Why urgent</dt><dd>{{ item.urgent_reason }}</dd></div>{% endif %}
+    </dl>
+  </section>
+  <div>
+    {% if domain_error %}<div class="alert alert-error" role="alert">{% icon "alert" %}<div>{{ domain_error.message }}</div></div>{% endif %}
+    {% if item.state == 'SUBMITTED' %}
+    <section class="decision decision-panel">
+      <div class="decision-head">{% icon "check-circle" %}<h2>Your decision</h2></div>
+      <form method="post" class="decision-body">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}">
+        <p class="small muted">Approving confirms the department needs this. It does not reserve any stock.</p>
+        <div class="field"><label for="reason">Reason (required to return or reject)</label><textarea id="reason" name="reason" rows="3">{{ request.POST.reason }}</textarea></div>
+        <div class="button-row"><button class="btn btn-primary" name="decision" value="approve">{% icon "check" %} Approve need</button>
+          <button class="btn btn-secondary" name="decision" value="return">{% icon "return" %} Return for changes</button>
+          <button class="btn btn-danger-outline" name="decision" value="reject">Reject</button></div>
+      </form>
+    </section>
+    {% else %}
+    <div class="alert alert-info">{% icon "info" %}<div>This request is no longer awaiting a decision.</div></div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

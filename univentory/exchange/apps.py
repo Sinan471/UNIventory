@@ -7,4 +7,4 @@ class ExchangeConfig(AppConfig):
     def ready(self):
         from core.navigation import register
         from identity.policy import AccessPolicy
-        register("transfers", "transfer:queue", visible=AccessPolicy.has_any_role)
+        register("transfers", "transfer:queue", visible=lambda user: bool(AccessPolicy.role_codes(user) & {"REQUESTER", "DEPT_REP", "CUSTODIAN", "RECEIVER"}))

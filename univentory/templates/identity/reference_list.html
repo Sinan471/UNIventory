@@ -19,7 +19,7 @@
     {% for row in rows %}
       <tr>
         <td class="mono">{{ row.code }}</td>
-        <td><a class="row-title" href="{% url 'identity:reference_edit' kind row.pk %}">{{ row.name }}</a>{% if row.building %}<div class="small muted">{{ row.building }}{% if row.room %}, {{ row.room }}{% endif %} · {{ row.campus }}</div>{% endif %}</td>
+        <td><a class="row-title" href="{% url 'identity:reference_edit' kind row.pk %}">{{ row.name }}</a>{% if row.building %}<div class="small muted">{{ row.building }}{% if row.room %}, {{ row.room }}{% endif %}, {{ row.campus }}</div>{% endif %}</td>
         <td lang="ar" dir="rtl">{{ row.name_ar }}</td>
         <td>{% if row.is_active %}{% trans "Active" as l %}{% tone_badge "success" l %}{% else %}{% trans "Deactivated" as l %}{% tone_badge "neutral" l %}{% endif %}</td>
         <td>

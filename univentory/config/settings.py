@@ -11,6 +11,7 @@ import os
 from urllib.parse import urlparse, unquote
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.csp import CSP
 from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -87,6 +88,7 @@ for _module in OPTIONAL_MODULES:
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -199,6 +201,33 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = "same-origin"
     X_FRAME_OPTIONS = "DENY"
+
+# Browser hardening that applies in every environment (NFR-11).
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+# Content Security Policy: scripts, fonts and images only from this origin;
+# no plugins, no framing, forms post only here (and to the KU identity
+# provider when SSO is configured). Inline style attributes are allowed for
+# data bars; inline script is not.
+_form_targets = [CSP.SELF]
+if UNIVENTORY_OIDC["ISSUER"]:
+    _issuer = urlparse(UNIVENTORY_OIDC["ISSUER"])
+    _form_targets.append(f"{_issuer.scheme}://{_issuer.netloc}")
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    "script-src": [CSP.SELF],
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE],
+    "img-src": [CSP.SELF, "data:"],
+    "font-src": [CSP.SELF],
+    "connect-src": [CSP.SELF],
+    "object-src": [CSP.NONE],
+    "base-uri": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+    "form-action": _form_targets,
+}
 
 # ---------------------------------------------------------------------------
 # Internationalisation (IF-08, FR-57)

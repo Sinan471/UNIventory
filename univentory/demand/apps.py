@@ -7,4 +7,4 @@ class DemandConfig(AppConfig):
     def ready(self):
         from core.navigation import register
         from identity.policy import AccessPolicy
-        register("requests", "demand:list", visible=AccessPolicy.has_any_role)
+        register("requests", "demand:list", visible=lambda user: AccessPolicy.has_role(user, "REQUESTER"))

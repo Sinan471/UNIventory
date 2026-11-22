@@ -172,14 +172,41 @@ class ImpactCalculator:
 
     @staticmethod
     def carbon_reduction():
-        # Carbon reduction cannot be calculated until both
-        # replacement and reuse scenarios have documented factors.
-        return {
-            "value": None,
-            "unit": "kg CO2e",
-            "status": "UNKNOWN",
-            "note": "Scenario-specific evidence is required.",
-        }
+        """Estimated kg CO2e avoided by accepted reuse (SUS-08).
+
+        Replacement emissions come from an active factor with activity
+        ``replacement:<CATEGORY CODE>`` (kg CO2e per unit); reuse-side
+        emissions from ``reuse:transfer`` (kg CO2e per moved unit). A receipt
+        whose category has no replacement factor is left out and counted as
+        uncovered; a missing transfer factor makes the whole result Unknown.
+        Nothing missing is treated as zero.
+        """
+        from .models import EmissionFactor
+
+        factors = {f.activity: f for f in EmissionFactor.objects.filter(is_active=True)}
+        transfer = factors.get("reuse:transfer")
+        if transfer is None:
+            return {"value": None, "unit": "kg CO2e", "status": "UNKNOWN",
+                    "note": "No reuse-side (transport) factor is recorded, so no estimate can be made."}
+        total = ZERO
+        covered = uncovered = ZERO
+        sources = set()
+        receipts = ReceiptEvent.objects.select_related("consignment__reservation__listing__asset__category")
+        for receipt in receipts:
+            code = receipt.consignment.reservation.listing.asset.category.code
+            factor = factors.get(f"replacement:{code}")
+            if factor is None:
+                uncovered += receipt.quantity
+                continue
+            covered += receipt.quantity
+            sources.update({factor.source_reference, transfer.source_reference})
+            total += receipt.quantity * (factor.kg_co2e_per_unit - transfer.kg_co2e_per_unit)
+        if covered == ZERO:
+            return {"value": None, "unit": "kg CO2e", "status": "UNKNOWN",
+                    "note": "No accepted reuse has a replacement factor for its category."}
+        return {"value": total, "unit": "kg CO2e", "status": "ESTIMATED" if uncovered == ZERO else "PARTIAL_COVERAGE",
+                "covered_units": covered, "uncovered_units": uncovered, "sources": sorted(sources),
+                "note": "Estimate: replacement emissions minus transfer emissions for accepted units."}
 
     @classmethod
     def calculate_all(cls):

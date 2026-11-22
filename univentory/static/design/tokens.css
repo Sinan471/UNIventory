@@ -3,58 +3,176 @@
  * Every module's pages use these variables; no module defines its own
  * global palette or stylesheet (plan Section 8, One Application and One UI).
  *
- * Contrast (WCAG 2.2 AA) checked for text pairs:
- *   ink #102A43 on canvas #F6F4EE ........ 13.4:1
- *   ink-2 #52616B on surface #FFFFFF ...... 6.3:1
- *   primary #146C60 on surface ............ 6.0:1  (white on primary 6.0:1)
- *   attention-ink #7A4A00 on attention-bg . 7.0:1
- *   danger #B42318 on surface ............. 6.0:1
+ * Two selected themes, not an automatic flip:
+ *   dark  (default)  deep navy night with a faint blueprint grid
+ *   light            porcelain paper with a subtle dot lattice, darker navy ink
+ * The viewer's choice is stored in the "uv_theme" cookie and stamped on
+ * <html data-theme>. Chart colours are the validated categorical slots
+ * (dataviz reference palette, slots 1-4 in fixed order), checked against
+ * each theme's chart surface.
+ *
+ * Contrast (WCAG 2.2 AA), dark: ink #E6ECF7 on canvas #060C19 16.9:1;
+ *   ink-2 #A7B4CC on surface #0E1830 8.0:1; link #8FB4FF on surface 7.9:1;
+ *   white on primary #2C63D6 5.4:1.
+ * Light: ink #0A1630 on canvas #EDF1F7 16.1:1; ink-2 #3E4C66 on paper 8.6:1;
+ *   primary #163C80 on paper 10.4:1.
  */
+:root, :root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --canvas: #060C19;
+  --canvas-pattern:
+    radial-gradient(1200px 520px at 78% -8%, rgba(44, 99, 214, 0.20), transparent 62%),
+    radial-gradient(900px 480px at -6% 108%, rgba(212, 166, 74, 0.07), transparent 60%),
+    linear-gradient(rgba(140, 170, 230, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(140, 170, 230, 0.035) 1px, transparent 1px);
+  --canvas-pattern-size: auto, auto, 40px 40px, 40px 40px;
+  --surface: #0E1830;
+  --surface-raised: #13203D;
+  --surface-sunk: #0A1326;
+  --surface-hover: #15244A;
+  --surface-glass: rgba(14, 24, 48, 0.78);
+  --tile: linear-gradient(160deg, #1A2A50 0%, #0F1A33 100%);
+  --tile-border: rgba(143, 180, 255, 0.10);
+
+  /* Ink */
+  --ink: #E6ECF7;
+  --ink-2: #A7B4CC;
+  --ink-3: #7D8AA5;
+  --line: #1C2A4A;
+  --line-strong: #2B3C63;
+
+  /* Navy rail */
+  --rail-bg: #040914;
+  --rail-line: rgba(143, 180, 255, 0.08);
+  --navy-rail-text: #C3CEE4;
+  --navy-rail-muted: #7484A3;
+  --rail-active: #12234A;
+
+  /* Brand */
+  --primary: #2C63D6;
+  --primary-hover: #3A71E6;
+  --primary-soft: rgba(57, 135, 229, 0.16);
+  --primary-ink: #8FB4FF;
+  --link: #8FB4FF;
+  --link-hover: #B5CDFF;
+  --brass: #D4A64A;
+  --brass-soft: rgba(212, 166, 74, 0.16);
+  --brass-ink: #E9C77F;
+
+  /* States (always paired with text and an indicator) */
+  --success: #2FB383;
+  --success-bg: rgba(47, 179, 131, 0.14);
+  --success-ink: #7CDDB6;
+  --attention: #D4A64A;
+  --attention-bg: rgba(212, 166, 74, 0.14);
+  --attention-ink: #F0CF8A;
+  --danger: #F07171;
+  --danger-hover: #FF8A8A;
+  --danger-bg: rgba(240, 113, 113, 0.13);
+  --info-bg: rgba(57, 135, 229, 0.15);
+  --info-ink: #A9C6FF;
+  --focus: #6FA0FF;
+
+  /* Charts: validated categorical slots 1-4 (dark steps) */
+  --chart-1: #3987E5;
+  --chart-2: #D95926;
+  --chart-3: #199E70;
+  --chart-4: #C98500;
+  --chart-grid: #1B2847;
+  --chart-track: #16223F;
+  --chart-surface: #0E1830;
+
+  --shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --shadow-overlay: 0 24px 60px -18px rgba(0, 0, 0, 0.75), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --canvas: #EDF1F7;
+  --canvas-pattern:
+    radial-gradient(1100px 480px at 80% -10%, rgba(22, 60, 128, 0.08), transparent 60%),
+    radial-gradient(rgba(10, 22, 48, 0.07) 1px, transparent 1.3px);
+  --canvas-pattern-size: auto, 18px 18px;
+  --surface: #FBFCFE;
+  --surface-raised: #FFFFFF;
+  --surface-sunk: #E6ECF4;
+  --surface-hover: #F2F5FA;
+  --surface-glass: rgba(237, 241, 247, 0.85);
+  --tile: linear-gradient(160deg, #E8EEF8 0%, #DCE4F1 100%);
+  --tile-border: rgba(10, 22, 48, 0.06);
+
+  --ink: #0A1630;
+  --ink-2: #3E4C66;
+  --ink-3: #5B6882;
+  --line: #D9E0EB;
+  --line-strong: #B8C4D6;
+
+  --rail-bg: #071330;
+  --rail-line: rgba(195, 206, 228, 0.10);
+  --navy-rail-text: #C9D4EA;
+  --navy-rail-muted: #8595B6;
+  --rail-active: #13285A;
+
+  --primary: #163C80;
+  --primary-hover: #10306A;
+  --primary-soft: #E2E9F6;
+  --primary-ink: #163C80;
+  --link: #1A4594;
+  --link-hover: #10306A;
+  --brass: #B07F1E;
+  --brass-soft: #F4EAD3;
+  --brass-ink: #7A570F;
+
+  --success: #1B7A5A;
+  --success-bg: #E0F1E9;
+  --success-ink: #145A43;
+  --attention: #B07F1E;
+  --attention-bg: #F6EDD8;
+  --attention-ink: #6B4A08;
+  --danger: #A52A1E;
+  --danger-hover: #861F16;
+  --danger-bg: #F9E6E3;
+  --info-bg: #E2E9F6;
+  --info-ink: #163C80;
+  --focus: #2F6FE0;
+
+  --chart-1: #2A78D6;
+  --chart-2: #EB6834;
+  --chart-3: #1BAF7A;
+  --chart-4: #EDA100;
+  --chart-grid: #E1E7F0;
+  --chart-track: #E6ECF4;
+  --chart-surface: #FBFCFE;
+
+  --shadow-raised: 0 1px 2px rgba(10, 22, 48, 0.05), 0 8px 24px -16px rgba(10, 22, 48, 0.25);
+  --shadow-overlay: 0 18px 40px -12px rgba(8, 19, 42, 0.35), 0 2px 6px rgba(8, 19, 42, 0.08);
+}
+
 :root {
-  /* Colour */
-  --canvas: #F6F4EE;
-  --surface: #FFFFFF;
-  --surface-sunk: #EFECE3;
-  --ink: #102A43;
-  --ink-2: #52616B;
-  --ink-3: #6B7780;
-  --line: #E1DDD2;
-  --line-strong: #C9C3B4;
-
-  --primary: #146C60;
-  --primary-hover: #0F574D;
-  --primary-soft: #E3F1EE;
-  --primary-ink: #0B4A42;
-
-  --attention: #C98A1B;
-  --attention-bg: #FBF0D9;
-  --attention-ink: #7A4A00;
-
-  --danger: #B42318;
-  --danger-hover: #912018;
-  --danger-bg: #FDECEA;
-
-  --info-bg: #E8EEF5;
-  --info-ink: #1D3F66;
-
-  --focus: #1F6FEB;
+  /* Legacy names kept so every module's templates keep working */
+  --navy-950: #040914;
+  --navy-900: #0A1630;
+  --navy-800: #102244;
+  --navy-700: #183262;
 
   /* Typography */
-  --font-display: "Outfit", system-ui, "Segoe UI", sans-serif;
-  --font-body: "Work Sans", system-ui, "Segoe UI", sans-serif;
-  --font-arabic: "Noto Sans Arabic", Tahoma, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, "Segoe UI", sans-serif;
+  --font-arabic: "IBM Plex Sans Arabic", "IBM Plex Sans", Tahoma, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 
-  --text-xs: 0.75rem;
+  --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.75rem;
-  --text-3xl: 2.25rem;
-  --leading: 1.5;
+  --text-lg: 1.1875rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.5rem;
+  --leading: 1.55;
 
-  /* Spacing: 4/8 rhythm */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
@@ -62,30 +180,26 @@
   --s-5: 24px;
   --s-6: 32px;
   --s-7: 48px;
+  --s-8: 64px;
   --gutter: 16px;
   --section-gap: 24px;
 
-  /* Shape and depth */
-  --radius-sm: 8px;
-  --radius: 10px;
-  --radius-lg: 12px;
-  --shadow-raised: 0 1px 2px rgba(16, 42, 67, 0.08);
-  --shadow-overlay: 0 12px 32px rgba(16, 42, 67, 0.18);
+  --radius-sm: 6px;
+  --radius: 12px;
+  --radius-lg: 16px;
 
-  /* Layout */
-  --rail-width: 232px;
-  --topbar-height: 60px;
-  --content-max: 1280px;
+  --rail-width: 252px;
+  --topbar-height: 64px;
+  --content-max: 1320px;
   --tap: 44px;
 
-  /* Motion */
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --fast: 120ms;
-  --medium: 200ms;
+  --medium: 220ms;
 }
 
 @media (min-width: 1024px) {
-  :root { --gutter: 32px; --section-gap: 32px; }
+  :root { --gutter: 36px; --section-gap: 28px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

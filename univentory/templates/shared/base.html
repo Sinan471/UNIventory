@@ -1,14 +1,17 @@
 {% load static i18n ui %}<!doctype html>
 {% get_current_language as LANG %}{% get_current_language_bidi as RTL %}
-<html lang="{{ LANG }}" dir="{% if RTL %}rtl{% else %}ltr{% endif %}">
+<html lang="{{ LANG }}" dir="{% if RTL %}rtl{% else %}ltr{% endif %}" data-theme="{{ ui_theme }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#060C19">
+  <link rel="icon" href="{% static 'brand/favicon.svg' %}" type="image/svg+xml">
   <title>{% block title %}UNIventory{% endblock %} · UNIventory</title>
-  <link rel="preload" href="{% static 'fonts/work-sans.woff2' %}" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
-  <link rel="stylesheet" href="{% static 'design/tokens.css' %}">
-  <link rel="stylesheet" href="{% static 'design/app.css' %}">
+  <link rel="preload" href="{% static 'fonts/plex-sans-400.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/plex-condensed-600.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}?v=navy-5">
+  <link rel="stylesheet" href="{% static 'design/tokens.css' %}?v=navy-5">
+  <link rel="stylesheet" href="{% static 'design/app.css' %}?v=navy-5">
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -18,15 +21,22 @@
 <div class="shell">
   <nav class="rail" aria-label="{% trans 'Main' %}">
     <a class="brand" href="{% url 'core:home' %}">
-      <span class="brand-mark">{% icon "box" %}</span> UNIventory
+      {% include "shared/logo.html" with id="rail" %}
+      <span class="word">UNIventory<small>{% trans "Khalifa University" %}</small></span>
     </a>
-    {% for item in nav_items %}
+    {% for item in nav_items %}{% if item.key != "notifications" and item.key != "assistant" %}
       <a class="nav-link" href="{{ item.url }}" {% if item.key == nav_current %}aria-current="page"{% endif %}>
         {% icon item.icon %} <span>{{ item.label }}</span>
+        {% if item.count %}<span class="nav-count" aria-label="{% blocktrans count n=item.count %}{{ n }} item waiting{% plural %}{{ n }} items waiting{% endblocktrans %}">{{ item.count }}</span>{% endif %}
       </a>
-    {% endfor %}
+    {% endif %}{% endfor %}
     <div class="rail-foot">
-      <a class="nav-link" href="{% url 'core:design_reference' %}">{% icon "grid" %} <span>{% trans "Design reference" %}</span></a>
+      {% if user.is_authenticated %}
+      <div class="role-chip">
+        <strong>{{ user.display_name }}</strong>
+        <span>{% for label in actor_role_labels %}{{ label }}{% if not forloop.last %}; {% endif %}{% empty %}{% trans "No role assigned" %}{% endfor %}</span>
+      </div>
+      {% endif %}
     </div>
   </nav>
 
@@ -38,12 +48,27 @@
       </div>
     {% endif %}
     <header class="topbar">
-      <a class="brand" href="{% url 'core:home' %}"><span class="brand-mark">{% icon "box" %}</span> UNIventory</a>
+      <a class="brand" href="{% url 'core:home' %}">{% include "shared/logo.html" with id="top" %}<span class="word">UNIventory</span></a>
+      <span class="topbar-context">{% block context_label %}{% endblock %}</span>
       <div class="topbar-actions">
-        {# Notifications slot: Sinan's notifications module renders here when installed. #}
-        {% block notifications_slot %}{% endblock %}
-        {# Help / assistant slot: Jessica's assistant drawer mounts here when installed. #}
-        {% block assistant_slot %}{% endblock %}
+        {% block assistant_slot %}
+        {% for item in nav_items %}{% if item.key == "assistant" %}
+          <a class="assistant-link" href="{{ item.url }}">{% icon "message" "icon-sm" %}<span>{% trans "Ask the assistant" %}</span></a>
+        {% endif %}{% endfor %}
+        {% endblock %}
+        {% block notifications_slot %}
+        {% for item in nav_items %}{% if item.key == "notifications" %}
+          <a class="icon-button" href="{{ item.url }}" title="{% trans 'Notifications' %}">
+            {% icon "bell" %}
+            {% if unread_notifications %}<span class="dot-count">{{ unread_notifications }}</span>{% endif %}
+            <span class="visually-hidden">{% blocktrans count n=unread_notifications %}Notifications, {{ n }} unread{% plural %}Notifications, {{ n }} unread{% endblocktrans %}</span>
+          </a>
+        {% endif %}{% endfor %}
+        {% endblock %}
+        <button class="icon-button theme-toggle" type="button" data-theme-toggle title="{% trans 'Switch light or dark theme' %}">
+          <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"></use></svg><svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"></use></svg>
+          <span class="visually-hidden">{% trans "Switch light or dark theme" %}</span>
+        </button>
         <form action="{% url 'set_language' %}" method="post" class="lang-switch">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -62,10 +87,10 @@
           <div class="menu-panel" id="profile-menu" hidden>
             <div class="menu-meta">
               <strong>{{ user.display_name }}</strong><br>
-              <span class="small muted">{{ user.email }}</span>
+              <span class="small muted">{% for label in actor_role_labels %}{{ label }}{% if not forloop.last %}; {% endif %}{% endfor %}</span>
             </div>
             {% for item in nav_items %}{% if not item.primary %}
-              <a class="menu-item" href="{{ item.url }}">{% icon item.icon %} {{ item.label }}</a>
+              <a class="menu-item" href="{{ item.url }}">{% icon item.icon %} {{ item.label }}{% if item.count %} <span class="badge badge-attention end">{{ item.count }}</span>{% endif %}</a>
             {% endif %}{% endfor %}
             <form method="post" action="{% url 'identity:logout' %}">
               {% csrf_token %}
@@ -99,7 +124,7 @@
   {% endif %}{% endfor %}
 </nav>
 {% endblock %}
-<script src="{% static 'design/app.js' %}" defer></script>
+<script src="{% static 'design/app.js' %}?v=navy-5" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

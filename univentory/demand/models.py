@@ -19,6 +19,14 @@ class ResourceRequest(models.Model):
     department = models.ForeignKey("identity.Department", on_delete=models.PROTECT)
     listing = models.ForeignKey("catalogue.Listing", null=True, blank=True, on_delete=models.PROTECT)
     title = models.CharField(max_length=160)
+    # FR-15: category, minimum acceptable condition and destination of the need.
+    category = models.ForeignKey("identity.Category", null=True, blank=True, on_delete=models.PROTECT,
+                                 help_text="Helps matching. Required to submit.")
+    min_condition = models.CharField("minimum acceptable condition", max_length=12, blank=True, default="",
+                                     choices=[("", "Any condition"), ("POOR", "Poor"), ("FAIR", "Fair"),
+                                              ("GOOD", "Good"), ("EXCELLENT", "Excellent")])
+    destination = models.ForeignKey("identity.Location", null=True, blank=True, on_delete=models.PROTECT,
+                                    related_name="+", help_text="Where the items should be delivered.")
     purpose = models.TextField()
     specifications = models.TextField(blank=True)
     quantity = models.DecimalField(max_digits=12, decimal_places=3, validators=[MinValueValidator(0.001)])

@@ -1,12 +1,12 @@
 {% extends "shared/base.html" %}{% load i18n static ui %}
 {% block title %}{{ asset.asset_code }} {{ asset.title }}{% endblock %}
 {% block content %}
-<nav class="breadcrumb"><a href="{% url 'inventory:my_assets' %}">{% trans "My Assets" %}</a> / <span class="asset-code">{{ asset.asset_code }}</span></nav>
+<nav class="breadcrumb"><a href="{% url 'inventory:my_assets' %}">{% trans "My Assets" %}</a><span class="sep">/</span><span>{{ asset.asset_code }}</span></nav>
 <div class="page-head">
-  <div>
-    <span class="eyebrow"><span class="asset-code">{{ asset.asset_code }}</span> · {{ asset.category }}{% if asset.subcategory %} / {{ asset.subcategory }}{% endif %} · {{ asset.get_tracking_type_display }}</span>
+  <div class="with-thumb"><span class="thumb-sm thumb-lg"><img src="{% item_art asset %}" alt="" width="160" height="120"></span><div>
+    <div class="flex wrap mb-2"><span class="asset-tag">{{ asset.asset_code }}</span><span class="small muted">{{ asset.category }}{% if asset.subcategory %} / {{ asset.subcategory }}{% endif %}</span><span class="badge badge-neutral">{{ asset.get_tracking_type_display }}</span></div>
     <h1>{{ asset.title }}</h1>
-  </div>
+  </div></div>
   <div class="actions">
     {% if can_edit %}
       <a class="btn btn-secondary" href="{% url 'inventory:asset_edit' asset.pk %}">{% icon "edit" %} {% trans "Edit record" %}</a>
@@ -34,6 +34,7 @@
   <a class="tab" role="tab" id="t-evidence" href="#evidence" aria-controls="evidence" aria-selected="false" tabindex="-1">{% trans "Evidence" %} <span class="count">{{ attachments|length }}</span></a>
   <a class="tab" role="tab" id="t-history" href="#history" aria-controls="history" aria-selected="false" tabindex="-1">{% trans "History" %}</a>
   <a class="tab" role="tab" id="t-listings" href="#listings" aria-controls="listings" aria-selected="false" tabindex="-1">{% trans "Listings" %} <span class="count">{{ listings|length }}</span></a>
+  <a class="tab" role="tab" id="t-advice" href="#advice" aria-controls="advice" aria-selected="false" tabindex="-1">{% trans "Next steps" %}</a>
 </div>
 
 {# ---------------- Overview ---------------- #}
@@ -91,7 +92,7 @@
       <div class="panel">
         <h2>{% trans "Restrictions and handling" %}</h2>
         {% if asset.has_restriction %}
-          <p><strong>{{ asset.get_ownership_restriction_display }}</strong> · {% if asset.release_rights_confirmed %}{% trans "Release rights confirmed" as l %}{% tone_badge "success" l %}{% else %}{% trans "Release rights not confirmed" as l %}{% tone_badge "danger" l %}{% endif %}</p>
+          <p><strong>{{ asset.get_ownership_restriction_display }}</strong>, {% if asset.release_rights_confirmed %}{% trans "Release rights confirmed" as l %}{% tone_badge "success" l %}{% else %}{% trans "Release rights not confirmed" as l %}{% tone_badge "danger" l %}{% endif %}</p>
           <p class="small">{{ asset.restriction_notes }}</p>
         {% else %}<p class="muted small">{% trans "No ownership restriction recorded." %}</p>{% endif %}
         {% if asset.needs_handling %}
@@ -119,7 +120,7 @@
         <tr>
           <td class="mono">{{ p.pk }}{% if p.parent_id %}<div class="small muted">{% trans "from" %} {{ p.parent_id }}</div>{% endif %}</td>
           <td class="num"><strong>{{ p.quantity|qty:asset }}</strong></td>
-          <td>{{ p.location.name }}<div class="small muted">{{ p.department.code }} · {{ p.custodian }}{% if p.temporary_custodian %} · {% trans "carried by" %} {{ p.temporary_custodian }}{% endif %}</div></td>
+          <td>{{ p.location.name }}<div class="small muted">{{ p.department.code }}, {{ p.custodian }}{% if p.temporary_custodian %}, {% trans "carried by" %} {{ p.temporary_custodian }}{% endif %}</div></td>
           <td>{% condition_badge p.condition p.get_condition_display %}</td>
           <td>{% lifecycle_badge p.lifecycle_state p.get_lifecycle_state_display %}</td>
           <td>{% safety_badge p %}</td>
@@ -141,7 +142,7 @@
                 <input type="hidden" name="version" value="{{ p.version }}"><input type="hidden" name="operation_key" value="{{ op_key }}-s{{ p.pk }}">
                 <div class="dialog-head"><h2 id="split-{{ p.pk }}-t">{% trans "Split this batch?" %}</h2><button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
                 <div class="dialog-body">
-                  <dl class="effect-list"><dt>{% trans "Asset" %}</dt><dd>{{ asset.asset_code }} {{ asset.title }}</dd><dt>{% trans "Portion" %}</dt><dd>#{{ p.pk }} · {{ p.quantity|qty:asset }} {{ asset|unit_label }} {% trans "at" %} {{ p.location.name }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "Creates a linked portion. The total stays the same." %}</dd></dl>
+                  <dl class="effect-list"><dt>{% trans "Asset" %}</dt><dd>{{ asset.asset_code }} {{ asset.title }}</dd><dt>{% trans "Portion" %}</dt><dd>#{{ p.pk }}, {{ p.quantity|qty:asset }} {{ asset|unit_label }} {% trans "at" %} {{ p.location.name }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "Creates a linked portion. The total stays the same." %}</dd></dl>
                   <div class="field mt-4"><label for="sq-{{ p.pk }}">{% trans "Units to separate" %}<span class="required">*</span></label><input id="sq-{{ p.pk }}" type="number" name="quantity" min="1" max="{{ p.quantity|qty:asset }}" step="any" required></div>
                   <div class="field mt-4"><label for="sr-{{ p.pk }}">{% trans "Reason" %}</label><input id="sr-{{ p.pk }}" type="text" name="reason" maxlength="200"></div>
                 </div>
@@ -169,7 +170,7 @@
                 <input type="hidden" name="version" value="{{ p.version }}"><input type="hidden" name="operation_key" value="{{ op_key }}-a{{ p.pk }}">
                 <div class="dialog-head"><h2 id="adjust-{{ p.pk }}-t">{% trans "Correct the counted quantity?" %}</h2><button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
                 <div class="dialog-body">
-                  <dl class="effect-list"><dt>{% trans "Portion" %}</dt><dd>#{{ p.pk }} · {% trans "recorded" %} {{ p.quantity|qty:asset }} {{ asset|unit_label }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "Records an adjustment event with your reason. Claimed units cannot be reduced." %}</dd></dl>
+                  <dl class="effect-list"><dt>{% trans "Portion" %}</dt><dd>#{{ p.pk }}, {% trans "recorded" %} {{ p.quantity|qty:asset }} {{ asset|unit_label }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "Records an adjustment event with your reason. Claimed units cannot be reduced." %}</dd></dl>
                   <div class="field mt-4"><label for="aq-{{ p.pk }}">{% trans "Counted quantity" %}<span class="required">*</span></label><input id="aq-{{ p.pk }}" type="number" name="quantity" min="0" step="any" required value="{{ p.quantity|qty:asset }}"></div>
                   <div class="field mt-4"><label for="ar-{{ p.pk }}">{% trans "Reason for the correction" %}<span class="required">*</span></label><input id="ar-{{ p.pk }}" type="text" name="reason" maxlength="200" required></div>
                 </div>
@@ -200,7 +201,7 @@
             <tr>
               <td>
                 {% if a.is_available %}<a class="row-title" href="{% evidence_url a %}">{% if a.is_image %}{% icon "image" "icon-sm" %}{% else %}{% icon "file" "icon-sm" %}{% endif %} {{ a.original_name }}</a>{% else %}<span>{{ a.original_name }}</span>{% endif %}
-                <div class="small muted">{{ a.size_bytes|filesizeformat }} · {{ a.uploaded_at|date:"j M Y H:i" }} · {{ a.uploaded_by }}{% if a.description %} · {{ a.description }}{% endif %}</div>
+                <div class="small muted">{{ a.size_bytes|filesizeformat }}, {{ a.uploaded_at|date:"j M Y H:i" }}, {{ a.uploaded_by }}{% if a.description %}, {{ a.description }}{% endif %}</div>
               </td>
               <td>{% if a.access_class == "CATALOGUE_PHOTO" %}{% trans "Catalogue photo" as l %}{% tone_badge "info" l %}{% else %}<span class="flex small">{% icon "lock" "icon-sm" %} {% trans "Restricted" %}</span>{% endif %}</td>
               <td>{% if a.withdrawn_at %}{% trans "Withdrawn" as l %}{% tone_badge "neutral" l %}<div class="small muted">{{ a.withdrawn_reason }}</div>{% elif a.status == "QUARANTINED" %}{% trans "Quarantined" as l %}{% tone_badge "danger" l %}<div class="small muted">{{ a.status_reason }}</div>{% else %}{% trans "Accepted" as l %}{% tone_badge "success" l %}{% endif %}</td>
@@ -239,16 +240,21 @@
   </div>
 </section>
 
+{# ---------------- Next-step advice (Jessica's AI widget) ---------------- #}
+<section id="advice" role="tabpanel" aria-labelledby="t-advice" hidden>
+  {% load ai_ui %}{% advice_panel asset %}
+</section>
+
 {# ---------------- History ---------------- #}
 <section id="history" role="tabpanel" aria-labelledby="t-history" hidden>
   <div class="panel">
-    <div class="panel-head"><h2>{% trans "Life-cycle history" %}</h2><span class="muted small end">{% trans "Newest first · immutable" %}</span></div>
+    <div class="panel-head"><h2>{% trans "Life-cycle history" %}</h2><span class="muted small end">{% trans "Newest first, immutable" %}</span></div>
     <ol class="timeline">
       {% for e in events %}
       <li>
         <span class="dot"></span>
-        <div class="what">{{ e.get_event_type_display }}{% if e.quantity %} · <span class="num">{{ e.quantity|qty:asset }}</span> {{ asset|unit_label }}{% endif %}{% if e.details.action %} · {{ e.details.action }}{% endif %}</div>
-        <div class="when"><time datetime="{{ e.occurred_at|date:'c' }}">{{ e.occurred_at|date:"j M Y, H:i" }}</time> · {{ e.actor }}{% if e.reference %} · <span class="mono">{{ e.reference }}</span>{% endif %}{% if e.portion_id %} · {% trans "portion" %} #{{ e.portion_id }}{% endif %}</div>
+        <div class="what">{{ e.get_event_type_display }}{% if e.quantity %}, <span class="num">{{ e.quantity|qty:asset }}</span> {{ asset|unit_label }}{% endif %}{% if e.details.action %}, {{ e.details.action }}{% endif %}</div>
+        <div class="when"><time datetime="{{ e.occurred_at|date:'c' }}">{{ e.occurred_at|date:"j M Y, H:i" }}</time>, {{ e.actor }}{% if e.reference %}, <span class="mono">{{ e.reference }}</span>{% endif %}{% if e.portion_id %}, {% trans "portion" %} #{{ e.portion_id }}{% endif %}</div>
         {% if e.details.reason %}<div class="small">{{ e.details.reason }}</div>{% endif %}
         {% if e.details.from and e.details.to %}<div class="small muted">{{ e.details.from }} → {{ e.details.to }}</div>{% endif %}
         {% if e.details.after %}<div class="small muted">{% trans "Changed:" %} {{ e.details.after.keys|join:", " }}</div>{% endif %}
@@ -267,7 +273,7 @@
       <thead><tr><th scope="col">{% trans "Listing" %}</th><th scope="col">{% trans "State" %}</th><th scope="col" class="num">{% trans "Offered" %}</th><th scope="col" class="num">{% trans "Free now" %}</th></tr></thead>
       <tbody>
       {% for l in listings %}
-        <tr><td><a class="row-title" href="{% url 'catalogue:listing_detail' l.pk %}">{{ l.title }}</a><div class="small muted">{{ l.department.code }} · {{ l.created_at|date:"j M Y" }}</div></td>
+        <tr><td><a class="row-title" href="{% url 'catalogue:listing_detail' l.pk %}">{{ l.title }}</a><div class="small muted">{{ l.department.code }}, {{ l.created_at|date:"j M Y" }}</div></td>
           <td>{% listing_badge l %}{% if l.state_reason %}<div class="small muted">{{ l.state_reason }}</div>{% endif %}</td>
           <td class="num">{{ l.offered_quantity|qty:asset }}</td><td class="num">{{ l.free_now|qty:asset }}</td></tr>
       {% endfor %}

@@ -1,3 +1,23 @@
-{% extends "shared/base.html" %}{% block title %}Audit history{% endblock %}{% block content %}<h1>Audit history</h1>
-<form method="get"><label for="action">Filter by action</label> <input id="action" name="action" value="{{ action }}"><button class="button">Search</button> <a href="{% url 'audit:export' %}?action={{ action|urlencode }}">Export CSV</a></form>
-<p>Showing up to 500 recent records. The export includes all matching records.</p><div class="table-wrap"><table><thead><tr><th>Time</th><th>Actor ID</th><th>Action</th><th>Target</th><th>Outcome</th><th>Reason</th></tr></thead><tbody>{% for row in rows %}<tr><td>{{ row.occurred_at }}</td><td>{{ row.actor_id|default:"System" }}</td><td>{{ row.action }}</td><td>{{ row.target_type }} {{ row.target_id }}</td><td>{{ row.outcome }}</td><td>{{ row.reason }}</td></tr>{% empty %}<tr><td colspan="6">No matching records.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Audit history{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Audit history</h1><p>Every decision, stock change and export. Entries can never be edited.</p></div>
+  <a class="btn btn-secondary" href="{% url 'audit:export' %}?action={{ action|urlencode }}">{% icon "download" %} Export CSV</a>
+</div>
+<form method="get" class="search-bar" role="search">
+  <label class="visually-hidden" for="action">Filter by action</label>
+  <input id="action" name="action" value="{{ action }}" placeholder="Filter by action, for example transfer or request.review">
+  <button class="btn btn-primary" type="submit">{% icon "search" %} Filter</button>
+</form>
+<p class="small muted">Showing up to 500 recent entries. The export includes every matching entry.</p>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Record</th><th>Outcome</th><th>Reason</th></tr></thead>
+    <tbody>{% for row in rows %}
+      <tr><td class="num">{{ row.occurred_at|date:"j M, H:i:s" }}</td><td>{{ row.actor.display_name|default:"System" }}</td><td><code>{{ row.action }}</code></td>
+        <td>{{ row.target_type }} {{ row.target_id }}</td><td>{% if row.outcome == 'success' %}{% tone_badge "success" "Success" %}{% else %}{% tone_badge "danger" row.outcome|capfirst %}{% endif %}</td><td class="small">{{ row.reason }}</td></tr>
+    {% empty %}<tr><td colspan="6" class="muted">No matching entries.</td></tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% endblock %}

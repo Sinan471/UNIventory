@@ -2,7 +2,7 @@
 {% block title %}{% trans "Release reviews" %}{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><span class="eyebrow">{% trans "Approvals" %} <span class="badge badge-test">{% trans "Test adapter" %}</span></span><h1>{% trans "Release reviews" %}</h1></div>
+  <div><h1>{% trans "Release reviews" %} <span class="badge badge-test">{% trans "Test adapter" %}</span></h1></div>
 </div>
 <div class="alert alert-warning">{% icon "alert" %}<div>{% trans "This queue is a labelled integration test adapter. It stands in for the Approvals workflow until that module is installed, and applies the same independence rule: you cannot decide a listing you prepared." %}</div></div>
 
@@ -11,7 +11,7 @@
   {% for listing in rows %}
   <section class="panel">
     <div class="panel-head">
-      <div><span class="small muted"><span class="asset-code">{{ listing.asset.asset_code }}</span> · {{ listing.asset.department.name }}</span>
+      <div><span class="small muted"><span class="asset-code">{{ listing.asset.asset_code }}</span>, {{ listing.asset.department.name }}</span>
         <h2 style="font-size:var(--text-lg)"><a href="{% url 'catalogue:listing_detail' listing.pk %}">{{ listing.title }}</a></h2></div>
       <span class="end">{% listing_badge listing %}</span>
     </div>

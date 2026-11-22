@@ -1,1 +1,19 @@
-{% extends "shared/base.html" %}{% block title %}Final actions{% endblock %}{% block content %}<h1>Final actions</h1><p>Donation, recycling and disposal cases available to you.</p>{% for item in items %}<p><a href="{% url 'final_actions:detail' item.pk %}">{{ item.asset.title }} — {{ item.outcome }}</a> · {{ item.get_state_display }}</p>{% empty %}<p>No final actions.</p>{% endfor %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Final actions{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Final actions</h1><p>Donation, recycling and disposal, each with evidence.</p></div>
+  <a class="btn btn-secondary" href="{% url 'care:list' %}">{% icon "wrench" %} Care</a>
+</div>
+{% if items %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Asset</th><th>Outcome</th><th class="num">Quantity</th><th>Department</th><th>Status</th><th>Proposed</th></tr></thead>
+    <tbody>{% for item in items %}
+      <tr><td><div class="with-thumb"><span class="thumb-sm"><img src="{% item_art item.asset %}" alt="" width="160" height="120" loading="lazy"></span><a class="row-title" href="{% url 'final_actions:detail' item.pk %}">{{ item.asset.title }}</a></div></td><td>{{ item.outcome|key_label }}</td>
+        <td class="num">{{ item.quantity|qty }}</td><td>{{ item.department.name }}</td><td>{% status_badge item.state item.get_state_display %}</td><td>{{ item.created_at|date:"j M Y" }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty"><h2>No final actions</h2><p class="muted">Custodians propose donation, recycling or disposal from Care.</p></div>{% endif %}
+{% endblock %}

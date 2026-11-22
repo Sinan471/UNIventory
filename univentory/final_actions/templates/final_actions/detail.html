@@ -1,4 +1,52 @@
-{% extends "shared/base.html" %}{% block title %}Final action{% endblock %}{% block content %}<nav class="breadcrumb"><a href="{% url 'final_actions:list' %}">Final actions</a> / {{ item.pk }}</nav><h1>{{ item.outcome }}: {{ item.asset.title }}</h1><p>{{ item.quantity }} units · {{ item.department }} · {{ item.get_state_display }}</p><p>{{ item.reason }}</p>{% if item.recipient %}<p>Recipient: {{ item.recipient }}</p>{% endif %}
-{% if domain_error %}<p role="alert">{{ domain_error.message }}</p>{% endif %}{% if item.state == 'PROPOSED' and can_approve %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}"><button class="button button-primary" name="action" value="approve">Approve final action</button></form>{% endif %}
-{% if item.state == 'APPROVED' or item.state == 'IN_PROGRESS' %}{% if can_execute %}<section class="fieldset-card"><h2>Record execution</h2><form method="post">{% csrf_token %}{{ form.as_p }}<button class="button button-primary" name="action" value="execute">Record execution</button></form></section>{% endif %}{% endif %}
-<h2>Executions</h2>{% for execution in item.executions.all %}<p>{{ execution.quantity }} units · {{ execution.executed_at }} · Evidence {{ execution.evidence.original_name }}</p>{% empty %}<p>No executions recorded.</p>{% endfor %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Final action {{ item.pk }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'final_actions:list' %}">Final actions</a><span class="sep">/</span><span>{{ item.asset.title }}</span></nav>
+<div class="page-head">
+  <div><h1>{{ item.outcome|key_label }}: {{ item.asset.title }}</h1>
+    <div class="meta-row"><span>{% status_badge item.state item.get_state_display %}</span><span>{% icon "box" %} {{ item.quantity|qty }} unit{{ item.quantity|pluralize }}</span>
+      <span>{% icon "map-pin" %} {{ item.department.name }}</span></div>
+  </div>
+</div>
+<ol class="track" aria-label="Final action stages">
+  <li class="done">Proposed</li>
+  <li class="{% if item.state == 'PROPOSED' %}current{% else %}done{% endif %}">Approved</li>
+  <li class="{% if item.state == 'APPROVED' or item.state == 'IN_PROGRESS' %}current{% elif item.state == 'COMPLETED' %}done{% endif %}">Executed with evidence</li>
+  <li class="{% if item.state == 'COMPLETED' %}done{% endif %}">Completed</li>
+</ol>
+{% if domain_error %}<div class="alert alert-error" role="alert">{% icon "alert" %}<div>{{ domain_error.message }}</div></div>{% endif %}
+<div class="grid-2">
+  <div class="stack">
+    <section class="panel">
+      <dl class="facts-list">
+        <dt>Reason</dt><dd>{{ item.reason }}</dd>
+        {% if item.recipient %}<dt>Recipient</dt><dd>{{ item.recipient }}</dd>{% endif %}
+        <dt>Proposed by</dt><dd>{{ item.proposed_by.display_name }}</dd>
+        {% if item.approved_by %}<dt>Approved by</dt><dd>{{ item.approved_by.display_name }}</dd>{% endif %}
+      </dl>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>Executions</h2></div>
+      <ol class="timeline">{% for execution in item.executions.all %}
+        <li><span class="dot"></span><span class="when">{{ execution.executed_at|date:"j M Y, H:i" }}</span><span class="what">{{ execution.quantity|qty }} unit{{ execution.quantity|pluralize }} completed</span><br><span class="who">Evidence: {{ execution.evidence.original_name }}</span></li>
+      {% empty %}<li class="muted">No execution recorded yet.</li>{% endfor %}</ol>
+    </section>
+  </div>
+  <div>
+    {% if item.state == 'PROPOSED' and can_approve %}
+    <form method="post" class="decision decision-panel">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}">
+      <div class="decision-head">{% icon "check-circle" %}<h2>Approve this outcome</h2></div>
+      <div class="decision-body"><p class="small muted">Approval locks {{ item.quantity|qty }} unit{{ item.quantity|pluralize }} for this action. Nothing changes on the asset until the custodian records completion evidence.</p>
+        <button class="btn btn-primary" name="action" value="approve">{% icon "check" %} Approve final action</button></div>
+    </form>
+    {% elif item.state == 'APPROVED' or item.state == 'IN_PROGRESS' %}{% if can_execute %}
+    <form method="post" class="decision decision-panel">{% csrf_token %}
+      <div class="decision-head">{% icon "file" %}<h2>Record completion</h2></div>
+      <div class="decision-body plain-form">{{ form.as_p }}<button class="btn btn-primary" name="action" value="execute">Record execution</button></div>
+    </form>
+    {% endif %}{% elif item.state == 'PROPOSED' %}
+    <div class="alert alert-info">{% icon "info" %}<div>Waiting for an independent department representative to approve.</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

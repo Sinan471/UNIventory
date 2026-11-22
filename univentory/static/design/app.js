@@ -6,6 +6,16 @@
 (function () {
   "use strict";
 
+  // ---- Theme toggle (dark default; choice kept in a first-party cookie) --
+  document.querySelectorAll("[data-theme-toggle]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var root = document.documentElement;
+      var next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", next);
+      document.cookie = "uv_theme=" + next + "; Max-Age=31536000; Path=/; SameSite=Lax";
+    });
+  });
+
   // ---- Menus (profile, mobile "more") --------------------------------
   document.querySelectorAll("[data-menu-button]").forEach(function (button) {
     var panel = document.getElementById(button.getAttribute("aria-controls"));

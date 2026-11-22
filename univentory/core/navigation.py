@@ -31,13 +31,19 @@ _REGISTRY: dict[str, NavEntry] = {}
 # Documented destinations in their fixed order. Modules owned by Sinan and
 # Jessica register the url_name when their routes exist.
 PLANNED = {
+    "home": (_("Workbench"), "home", 5, False),
     "exchange": (_("Exchange"), "search", 10, True),
     "requests": (_("My Requests"), "clipboard", 20, True),
     "assets": (_("My Assets"), "box", 30, True),
     "approvals": (_("Approvals"), "check-circle", 40, True),
+    "transfers": (_("Transfers"), "truck", 45, False),
     "care": (_("Care"), "wrench", 50, False),
+    "final_actions": (_("Final actions"), "recycle", 55, False),
     "impact": (_("Impact"), "leaf", 60, False),
     "reports": (_("Reports"), "bar-chart", 70, False),
+    "audit": (_("Audit history"), "history", 80, False),
+    "notifications": (_("Notifications"), "bell", 85, False),
+    "assistant": (_("Assistant"), "message", 86, False),
     "admin": (_("Administration"), "settings", 90, False),
 }
 

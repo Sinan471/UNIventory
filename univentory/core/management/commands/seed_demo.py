@@ -90,18 +90,13 @@ ITEMS = {
              ("Safety goggles box", "Box of anti-fog safety goggles.", {})],
 }
 USERS = [
+    # One person per job so a demonstration stays easy to follow.
     # username, display name, [(role, dept code or None)]
-    ("admin", "Hessa Al Mansoori (System Admin)", [("SYSADMIN", None)]),
-    ("mariam.custodian", "Mariam Al Hammadi (Custodian, MECH)", [("CUSTODIAN", "MECH")]),
-    ("omar.custodian", "Omar Haddad (Custodian, CHEM)", [("CUSTODIAN", "CHEM")]),
-    ("fatima.custodian", "Fatima Rahman (Custodian, FAC)", [("CUSTODIAN", "FAC")]),
-    ("khalid.rep", "Khalid Al Suwaidi (Dept Rep, MECH)", [("DEPT_REP", "MECH")]),
-    ("aisha.rep", "Aisha Noor (Dept Rep, CHEM)", [("DEPT_REP", "CHEM")]),
-    ("yousef.rep", "Yousef Karim (Dept Rep, FAC)", [("DEPT_REP", "FAC")]),
-    ("sara.requester", "Sara Ibrahim (Requester, CHEM)", [("REQUESTER", "CHEM")]),
-    ("ali.requester", "Ali Mahmoud (Requester, MECH)", [("REQUESTER", "MECH")]),
-    ("noura.campus", "Noura Saeed (Campus User)", [("CAMPUS_USER", None)]),
-    ("tariq.norole", "Tariq Aziz (no role yet)", []),
+    ("admin", "Hessa Al Mansoori", [("SYSADMIN", None)]),
+    ("mariam.custodian", "Mariam Al Hammadi", [("CUSTODIAN", "MECH"), ("CUSTODIAN", "CHEM"), ("CUSTODIAN", "FAC")]),
+    ("khalid.rep", "Khalid Al Suwaidi", [("DEPT_REP", "MECH"), ("DEPT_REP", "CHEM"), ("DEPT_REP", "FAC")]),
+    ("sara.requester", "Sara Ibrahim", [("REQUESTER", "CHEM"), ("RECEIVER", "CHEM")]),
+    ("tariq.norole", "Tariq Aziz", []),
 ]
 
 
@@ -117,12 +112,10 @@ class Command(BaseCommand):
         with transaction.atomic():
             depts = self._reference()
             users = self._users(depts)
-        custodians = {"MECH": users["mariam.custodian"], "CHEM": users["omar.custodian"],
-                      "FAC": users["fatima.custodian"]}
-        reps = {"MECH": users["khalid.rep"], "CHEM": users["aisha.rep"], "FAC": users["yousef.rep"]}
-        existing = AppUser.objects.filter(pk__in=[u.pk for u in custodians.values()]).count()
-        if existing != 3:
-            raise CommandError("Custodian accounts missing.")
+        custodians = {code: users["mariam.custodian"] for code, _, _ in DEPARTMENTS}
+        reps = {code: users["khalid.rep"] for code, _, _ in DEPARTMENTS}
+        if not AppUser.objects.filter(pk=users["mariam.custodian"].pk).exists():
+            raise CommandError("Custodian account missing.")
         created = published = 0
         categories = {c.code: c for c in Category.objects.all()}
         locations = list(Location.objects.select_related("department"))

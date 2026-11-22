@@ -4,7 +4,7 @@
 <nav class="breadcrumb"><a href="{% url 'catalogue:exchange' %}">{% trans "Exchange" %}</a> / <span class="asset-code">{{ asset.asset_code }}</span></nav>
 <div class="page-head">
   <div>
-    <span class="eyebrow"><span class="asset-code">{{ asset.asset_code }}</span> · {{ asset.category }}{% if asset.subcategory %} / {{ asset.subcategory }}{% endif %}</span>
+    <div class="flex wrap mb-2"><span class="asset-tag">{{ asset.asset_code }}</span><span class="small muted">{{ asset.category }}{% if asset.subcategory %} / {{ asset.subcategory }}{% endif %}</span></div>
     <h1>{{ listing.title }}</h1>
   </div>
   <div class="actions">{% listing_badge listing %}</div>
@@ -17,7 +17,7 @@
     <div class="gallery">
       <div class="gallery-main">
         {% if photos %}<img src="{% evidence_url photos.0 %}" alt="{% blocktrans with t=listing.title %}Photo of {{ t }}{% endblocktrans %}" width="800" height="600">
-        {% else %}<img class="illustration" style="width:45%" src="{% category_art asset.category %}" alt="" width="240" height="200">{% endif %}
+        {% else %}<img class="illustration" style="width:45%" src="{% item_art asset %}" alt="" width="240" height="200">{% endif %}
       </div>
       {% if photos|length > 1 %}
         <div class="gallery-thumbs">{% for p in photos|slice:"1:" %}<a href="{% evidence_url p %}"><img src="{% evidence_url p %}" alt="{% trans 'Additional photo' %} {{ forloop.counter|add:1 }}" loading="lazy" width="96" height="96"></a>{% endfor %}</div>
@@ -30,7 +30,7 @@
       <p>{{ listing.public_description|linebreaksbr }}</p>
       <dl class="facts mt-4">
         <div><dt>{% trans "Condition" %}</dt><dd>{% condition_badge listing.portion.condition listing.portion.get_condition_display %}</dd></div>
-        <div><dt>{% trans "Location" %}</dt><dd>{{ listing.portion.location.name }}<div class="small muted">{{ listing.portion.location.building }} · {{ listing.portion.location.campus }}</div></dd></div>
+        <div><dt>{% trans "Location" %}</dt><dd>{{ listing.portion.location.name }}<div class="small muted">{{ listing.portion.location.building }}, {{ listing.portion.location.campus }}</div></dd></div>
         <div><dt>{% trans "Offering department" %}</dt><dd>{{ listing.department.name }}</dd></div>
         <div><dt>{% trans "Estimated value" %}</dt><dd class="num">{{ asset.estimated_value_aed|aed }}</dd></div>
         <div><dt>{% trans "Purchased" %}</dt><dd>{% if asset.acquisition_date %}{{ asset.acquisition_date|date:"Y" }}{% else %}{% trans "Unknown" %}{% endif %}</dd></div>
@@ -54,7 +54,7 @@
   <aside class="stack">
     <div class="panel decision-panel">
       <div class="qty-hero">{{ free_qty|qty:asset }}</div>
-      <p class="muted">{% blocktrans with unit=asset.get_unit_display %}{{ unit }} free to reserve now{% endblocktrans %} · {% trans "offered" %} {{ listing.offered_quantity|qty:asset }}</p>
+      <p class="muted">{% blocktrans with unit=asset.get_unit_display %}{{ unit }} free to reserve now{% endblocktrans %}, {% trans "offered" %} {{ listing.offered_quantity|qty:asset }}</p>
 
       {% if not can_manage %}
         {% if listing.state == "PUBLISHED" and free_qty > 0 %}
@@ -71,7 +71,7 @@
 
       {% if can_manage %}
         {% if decision %}
-          <p class="small"><strong>{% trans "Release review" %}</strong>: {{ decision.status|title }}{% if decision.reason %} · {{ decision.reason }}{% endif %}
+          <p class="small"><strong>{% trans "Release review" %}</strong>: {{ decision.status|title }}{% if decision.reason %}, {{ decision.reason }}{% endif %}
             {% if decision.is_test_adapter %}<span class="badge badge-test">{% trans "Test adapter" %}</span>{% endif %}</p>
         {% endif %}
         {% if blockers and listing.state == "AWAITING_RELEASE" %}
@@ -97,7 +97,7 @@
                   <div class="dialog-head"><h2 id="act-{{ action }}-t">{% if action == "pause" %}{% trans "Pause this listing?" %}{% elif action == "withdraw" %}{% trans "Withdraw this listing?" %}{% else %}{% trans "Close this listing?" %}{% endif %}</h2>
                     <button class="icon-button" type="button" data-dialog-close aria-label="{% trans 'Close' %}">{% icon "x" %}</button></div>
                   <div class="dialog-body">
-                    <dl class="effect-list"><dt>{% trans "Listing" %}</dt><dd>{{ asset.asset_code }} · {{ listing.title }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "No new reservations can start. Existing holds, transfers and history stay in place." %}</dd></dl>
+                    <dl class="effect-list"><dt>{% trans "Listing" %}</dt><dd>{{ asset.asset_code }}, {{ listing.title }}</dd><dt>{% trans "Effect" %}</dt><dd>{% trans "No new reservations can start. Existing holds, transfers and history stay in place." %}</dd></dl>
                     <div class="field mt-4"><label for="r-{{ action }}">{% trans "Reason" %}<span class="required">*</span></label><input id="r-{{ action }}" type="text" name="reason" required maxlength="255"></div>
                   </div>
                   <div class="dialog-foot"><button class="btn btn-secondary" type="button" data-dialog-close>{% trans "Cancel" %}</button><button class="btn {% if action == 'pause' %}btn-primary{% else %}btn-danger{% endif %}" type="submit">{% trans "Confirm" %}</button></div>

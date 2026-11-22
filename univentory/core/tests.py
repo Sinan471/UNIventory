@@ -94,13 +94,21 @@ class ShellTests(TestCase):
         self.assertIn("Exchange", page)
 
     def test_first_screen_per_role(self):
+        """Every role lands on a workbench listing only its own work."""
         client = Client()
         sign_in(client, self.w.custodian)
-        self.assertEqual(client.get("/")["Location"], "/inventory/")
+        page = client.get("/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Draft listings")
+        self.assertNotContains(page, "Needs to approve")
         sign_in(client, self.w.requester)
-        self.assertEqual(client.get("/")["Location"], "/exchange/")
+        page = client.get("/")
+        self.assertContains(page, "Requests to finish")
+        self.assertNotContains(page, "Ready to dispatch")
         sign_in(client, self.w.admin)
-        self.assertEqual(client.get("/")["Location"], "/identity/admin/")
+        page = client.get("/")
+        self.assertContains(page, "/identity/admin/")
+        self.assertNotContains(page, "Needs to approve")
 
     def test_test_adapter_banner_is_visible(self):
         client = Client()

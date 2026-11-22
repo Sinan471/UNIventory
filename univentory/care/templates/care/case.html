@@ -1,6 +1,77 @@
-{% extends "shared/base.html" %}{% block title %}Maintenance case{% endblock %}{% block content %}<nav class="breadcrumb"><a href="{% url 'care:list' %}">Care</a> / Case {{ item.pk }}</nav><h1>{{ item.defect.asset.title }}</h1><p>{{ item.get_state_display }} · {{ item.outcome }}</p><p>Inspection: {{ item.inspection_notes }}</p><p>Work: {{ item.work_notes|linebreaksbr }}</p>{% if domain_error %}<p role="alert">{{ domain_error.message }}</p>{% endif %}
-{% if item.state != 'CLOSED' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}">
-{% if item.state == 'INSPECTION' %}<label for="notes">Work plan</label><textarea id="notes" name="notes" rows="3"></textarea><button class="button" name="action" value="request_work">Request work approval</button><p><label for="evidence">Evidence for inspection-only outcome</label><select id="evidence" name="evidence"><option value="">Choose an attachment</option>{% for file in evidence %}<option value="{{ file.pk }}">{{ file.original_name }}</option>{% endfor %}</select> <button class="button" name="action" value="no_repair">Verify no repair needed</button></p>
-{% elif item.state == 'AWAITING_APPROVAL' %}<button class="button" name="action" value="approve_work">Approve work</button>
-{% elif item.state == 'IN_PROGRESS' %}<label for="notes">Work performed</label><textarea id="notes" name="notes" rows="3"></textarea><button class="button" name="action" value="finish_work">Submit for verification</button>
-{% elif item.state == 'VERIFY' %}<label for="evidence">Verification evidence</label><select id="evidence" name="evidence" required><option value="">Choose an attachment</option>{% for file in evidence %}<option value="{{ file.pk }}">{{ file.original_name }}</option>{% endfor %}</select><p><button class="button" name="action" value="success">Verify success</button> <button class="button" name="action" value="failed">Record failure</button></p>{% endif %}</form>{% elif item.outcome == 'FAILED' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}"><label for="notes">Rework inspection findings</label><textarea id="notes" name="notes" rows="3" required></textarea><button class="button" name="action" value="rework">Open linked rework</button></form>{% endif %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Maintenance case {{ item.pk }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'care:list' %}">Care</a><span class="sep">/</span><span>Case {{ item.pk }}</span></nav>
+<div class="page-head">
+  <div><h1>{{ item.defect.asset.title }}</h1>
+    <div class="meta-row"><span>{% status_badge item.state item.get_state_display %}</span>{% if item.outcome %}<span>{% status_badge item.outcome item.outcome|key_label %}</span>{% endif %}
+      <span>{% icon "map-pin" %} {{ item.portion.department.name }}</span>{% if item.previous_case_id %}<span>Rework of <a href="{% url 'care:case' item.previous_case_id %}">case {{ item.previous_case_id }}</a></span>{% endif %}</div>
+  </div>
+  <a class="btn btn-secondary" href="{% url 'inventory:asset_detail' item.defect.asset_id %}">{% icon "box" %} Asset record</a>
+</div>
+
+<ol class="track" aria-label="Maintenance stages">
+  {% with s=item.state %}
+  <li class="done">Reported</li>
+  <li class="{% if s == 'INSPECTION' %}current{% else %}done{% endif %}">Inspection</li>
+  <li class="{% if s == 'AWAITING_APPROVAL' %}current{% elif s == 'IN_PROGRESS' or s == 'VERIFY' or item.outcome == 'SUCCESS' or item.outcome == 'FAILED' %}done{% endif %}">Work approved</li>
+  <li class="{% if s == 'IN_PROGRESS' %}current{% elif s == 'VERIFY' or item.outcome == 'SUCCESS' or item.outcome == 'FAILED' %}done{% endif %}">Work done</li>
+  <li class="{% if s == 'VERIFY' %}current{% elif item.outcome == 'FAILED' %}stopped{% elif s == 'CLOSED' %}done{% endif %}">{% if item.outcome == 'FAILED' %}Verified: failed{% elif item.outcome == 'NO_REPAIR' %}Verified: no repair needed{% else %}Verified{% endif %}</li>
+  {% endwith %}
+</ol>
+
+{% if domain_error %}<div class="alert alert-error" role="alert">{% icon "alert" %}<div>{{ domain_error.message }}</div></div>{% endif %}
+
+<div class="grid-2">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Findings</h2></div>
+      <dl class="facts-list">
+        <dt>Reported problem</dt><dd>{{ item.defect.description }}</dd>
+        <dt>Inspection</dt><dd>{{ item.inspection_notes|default:"Not yet recorded" }}</dd>
+        <dt>Work</dt><dd class="prose"><p class="mb-0">{{ item.work_notes|default:"None yet" }}</p></dd>
+        {% if item.evidence %}<dt>Evidence</dt><dd>{{ item.evidence.original_name }}</dd>{% endif %}
+      </dl>
+    </section>
+  </div>
+  <div>
+    {% if item.state != 'CLOSED' %}
+    <form method="post" class="decision decision-panel">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}">
+      {% if item.state == 'INSPECTION' %}
+        <div class="decision-head">{% icon "wrench" %}<h2>Decide after inspection</h2></div>
+        <div class="decision-body stack">
+          <div class="field"><label for="notes">Work plan and estimate</label><textarea id="notes" name="notes" rows="3"></textarea></div>
+          <button class="btn btn-primary" name="action" value="request_work">Ask for work approval</button>
+          <hr>
+          <div class="field"><label for="evidence">Evidence for “no repair needed”</label><select id="evidence" name="evidence"><option value="">Choose an attachment</option>{% for file in evidence %}<option value="{{ file.pk }}">{{ file.original_name }}</option>{% endfor %}</select>
+            <span class="help">A different maintenance specialist from the inspector must verify this.</span></div>
+          <button class="btn btn-secondary" name="action" value="no_repair">Verify no repair needed</button>
+        </div>
+      {% elif item.state == 'AWAITING_APPROVAL' %}
+        <div class="decision-head">{% icon "check-circle" %}<h2>Approve the work</h2></div>
+        <div class="decision-body"><p class="small muted">An independent department representative approves the spend before work starts.</p>
+          <button class="btn btn-primary" name="action" value="approve_work">{% icon "check" %} Approve work</button></div>
+      {% elif item.state == 'IN_PROGRESS' %}
+        <div class="decision-head">{% icon "wrench" %}<h2>Record the work</h2></div>
+        <div class="decision-body"><div class="field"><label for="notes">Work performed, parts and cost</label><textarea id="notes" name="notes" rows="3"></textarea></div>
+          <button class="btn btn-primary mt-4" name="action" value="finish_work">Send for verification</button></div>
+      {% elif item.state == 'VERIFY' %}
+        <div class="decision-head">{% icon "shield" %}<h2>Verify the outcome</h2></div>
+        <div class="decision-body"><div class="field"><label for="evidence">Verification evidence</label><select id="evidence" name="evidence" required><option value="">Choose an attachment</option>{% for file in evidence %}<option value="{{ file.pk }}">{{ file.original_name }}</option>{% endfor %}</select></div>
+          <p class="small muted mt-2">Success clears the safety block and returns the item to use. Failure keeps it blocked for a new decision.</p>
+          <div class="button-row"><button class="btn btn-success" name="action" value="success">{% icon "check" %} Repair succeeded</button><button class="btn btn-danger-outline" name="action" value="failed">Repair failed</button></div></div>
+      {% endif %}
+    </form>
+    {% elif item.outcome == 'FAILED' %}
+    <form method="post" class="decision">{% csrf_token %}<input type="hidden" name="version" value="{{ item.version }}">
+      <div class="decision-head">{% icon "return" %}<h2>Open linked rework</h2></div>
+      <div class="decision-body"><p class="small muted">The failed attempt and its cost stay on record. Rework starts a new linked case.</p>
+        <div class="field"><label for="notes">Rework inspection findings</label><textarea id="notes" name="notes" rows="3" required></textarea></div>
+        <button class="btn btn-primary mt-4" name="action" value="rework">Open rework case</button></div>
+    </form>
+    {% else %}
+    <div class="alert alert-success">{% icon "check-circle" %}<div>This case is closed. The verified item is back in use.</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

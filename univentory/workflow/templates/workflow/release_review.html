@@ -1,6 +1,38 @@
-{% extends "shared/base.html" %}{% block title %}Review listing release{% endblock %}{% block content %}
-<nav class="breadcrumb"><a href="{% url 'workflow:queue' %}">Approvals</a> / Listing release</nav>
-<h1>Release {{ review.listing.title }}</h1><p>{{ review.listing.department }} · Requested by {{ review.requested_by.display_name }}</p>
-<section class="fieldset-card"><p>{{ review.listing.public_description }}</p><p>Offered quantity: {{ review.listing.offered_quantity }}</p><p>Collection: {{ review.listing.collection_info }}</p></section>
-{% if domain_error %}<div class="alert alert-error" role="alert">{{ domain_error.message }}</div>{% endif %}
-{% if review.status == 'pending' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ review.listing_version }}"><label for="reason">Reason (required to return or reject)</label><textarea id="reason" name="reason" rows="3">{{ request.POST.reason }}</textarea><p><button class="button button-primary" name="decision" value="approved">Approve release</button> <button class="button" name="decision" value="returned">Return</button> <button class="button" name="decision" value="rejected">Reject</button></p></form>{% endif %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Review listing release{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'workflow:queue' %}">Approvals</a><span class="sep">/</span><span>Listing release</span></nav>
+<div class="page-head">
+  <div><h1>Release “{{ review.listing.title }}”</h1>
+    <div class="meta-row"><span>{% status_badge review.status review.get_status_display|default:review.status|capfirst %}</span>
+      <span>{% icon "map-pin" %} {{ review.listing.department.name }}</span><span>{% icon "user" %} Asked by {{ review.requested_by.display_name }}</span></div>
+  </div>
+  <a class="btn btn-secondary" href="{% url 'inventory:asset_detail' review.listing.asset_id %}">{% icon "box" %} Open asset record</a>
+</div>
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head"><h2>What will be published</h2><p>Campus users will see these fields. Restricted evidence stays private.</p></div>
+    <div class="prose"><p>{{ review.listing.public_description }}</p></div>
+    <dl class="facts mt-4">
+      <div><dt>Offered quantity</dt><dd class="num">{{ review.listing.offered_quantity|qty }}</dd></div>
+      <div><dt>Asset</dt><dd><span class="asset-tag">{{ review.listing.asset.asset_code }}</span></dd></div>
+      <div><dt>Collection</dt><dd>{{ review.listing.collection_info }}</dd></div>
+    </dl>
+  </section>
+  <div>
+    {% if domain_error %}<div class="alert alert-error" role="alert">{% icon "alert" %}<div>{{ domain_error.message }}</div></div>{% endif %}
+    {% if review.status == 'pending' %}
+    <section class="decision decision-panel">
+      <div class="decision-head">{% icon "tag" %}<h2>Release decision</h2></div>
+      <form method="post" class="decision-body">{% csrf_token %}<input type="hidden" name="version" value="{{ review.listing_version }}">
+        <p class="small muted">Approving lets the custodian publish this listing. Safety, ownership and free quantity are checked again when they publish.</p>
+        <div class="field"><label for="reason">Reason (required to return or reject)</label><textarea id="reason" name="reason" rows="3">{{ request.POST.reason }}</textarea></div>
+        <div class="button-row"><button class="btn btn-primary" name="decision" value="approved">{% icon "check" %} Approve release</button>
+          <button class="btn btn-secondary" name="decision" value="returned">{% icon "return" %} Return</button>
+          <button class="btn btn-danger-outline" name="decision" value="rejected">Reject</button></div>
+      </form>
+    </section>
+    {% else %}<div class="alert alert-info">{% icon "info" %}<div>This release has already been decided.</div></div>{% endif %}
+  </div>
+</div>
+{% endblock %}

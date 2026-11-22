@@ -7,39 +7,50 @@ from inventory.models import Condition
 
 class MatchingService:
 
-    RANKING_VERSION = "1.0"
+    RANKING_VERSION = "1.1"
 
-    @staticmethod
-    def _words(value):
+    STOPWORDS = set(
+        "a an and are as at be by for from in into is it of on or our the their this to with we need needs "
+        "new use used using two three four five six some each per one any all more extra spare second".split()
+    )
+    # Small, versioned vocabulary so equivalent terms meet (AI-03). Not a model.
+    SYNONYMS = {
+        "screen": "monitor", "display": "monitor", "pc": "desktop", "computer": "desktop", "notebook": "laptop",
+        "seat": "chair", "seating": "chair", "table": "desk", "workstation": "desk", "board": "whiteboard",
+        "scope": "microscope", "projection": "projector", "beamer": "projector", "print": "printer",
+    }
+
+    @classmethod
+    def _words(cls, value):
         import re
-        return set(re.findall(r"[a-z0-9]+", str(value or "").lower()))
+        out = set()
+        for word in re.findall(r"[a-z0-9]+", str(value or "").lower()):
+            if word in cls.STOPWORDS or len(word) < 2:
+                continue
+            if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+                word = word[:-1]
+            out.add(cls.SYNONYMS.get(word, word))
+        return out
 
     @classmethod
     def _functional_fit(cls, request, listing):
-        required_text = " ".join([
-            request.title or "",
-            request.purpose or "",
-            request.specifications or "",
-        ])
+        """Share of the need's key terms found in the listing (0-1).
 
+        Title and specifications carry the need; the purpose adds context but
+        cannot dilute the score. Version 1.1 of the rule-based fallback.
+        """
         asset = listing.asset
-
-        available_text = " ".join([
-            listing.title or "",
-            listing.public_description or "",
-            asset.title or "",
-            asset.description or "",
-            asset.subcategory or "",
-            " ".join(asset.tags or []),
-        ])
-
-        required_words = cls._words(required_text)
-        available_words = cls._words(available_text)
-
-        if not required_words:
+        available = cls._words(" ".join([
+            listing.title or "", listing.public_description or "", asset.title or "", asset.description or "",
+            asset.subcategory or "", " ".join(asset.tags or []), asset.category.name if asset.category_id else "",
+        ]))
+        core = cls._words(f"{request.title or ''} {request.specifications or ''}")
+        context = cls._words(request.purpose or "") - core
+        if not core and not context:
             return 0.0
-
-        return len(required_words & available_words) / len(required_words)
+        core_hit = len(core & available) / min(len(core), 4) if core else 0.0
+        context_hit = len(context & available) / min(len(context), 6) if context else 0.0
+        return round(min(1.0, 0.75 * core_hit + 0.25 * context_hit), 3)
 
     @staticmethod
     def _condition_score(listing):
@@ -172,11 +183,40 @@ class MatchingService:
                 cls._rank_listing(listing, quantity, request)
             )
 
-        results.sort(
-            key=lambda item: (
-                item["score"],
-                item["listing_id"]
-            ),
-        )
+        # Highest score first; ties broken by stable listing ID (RP-1).
+        results.sort(key=lambda item: (-item["score"], item["listing_id"]))
 
         return results[:5]
+
+    @classmethod
+    def for_request(cls, user, request, limit=5):
+        """Rank permitted, available listings for a saved need (AI-03 to AI-06).
+
+        Eligibility is applied first by the catalogue's scoped search (access,
+        release, safety, free stock). Candidates with no functional overlap are
+        not recommended. Partial supply is labelled, never hidden. The result
+        is a ranking aid; it allocates nothing.
+        """
+        outstanding = Decimal(str(request.outstanding_quantity))
+        if outstanding <= 0:
+            return []
+        listings = CatalogueQueryService.search(user, {"availability": "available", "sort": "newest"})
+        results = []
+        for listing in listings[:200]:
+            # Mandatory compatibility before ranking (AI-04): category and minimum condition.
+            if request.category_id and listing.asset.category_id != request.category_id:
+                continue
+            order = ["POOR", "FAIR", "GOOD", "EXCELLENT"]
+            condition = getattr(listing.portion, "condition", None)
+            if request.min_condition and (condition not in order or order.index(condition) < order.index(request.min_condition)):
+                continue
+            ranked = cls._rank_listing(listing, outstanding, request)
+            if ranked["factors"]["functional_fit"] < 0.25:
+                continue
+            ranked["partial"] = Decimal(str(listing.free_qty)) < outstanding
+            known = 6 - len(ranked["missing_evidence"])
+            ranked["evidence_status"] = "Sufficient evidence" if known / 6 >= 0.8 else "Needs review"
+            ranked["coverage"] = f"{known} of 6 factors recorded"
+            results.append(ranked)
+        results.sort(key=lambda item: (-item["score"], item["listing_id"]))
+        return results[:limit]
