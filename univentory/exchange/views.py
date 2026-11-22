@@ -22,19 +22,69 @@ def visible_reservations(user):
         Q(request__department_id__in=reps) | Q(listing__asset__custodian=user, listing__department_id__in=custodians) | Q(consignments__receiver=user, request__department_id__in=receivers)).distinct()
 
 
+NEXT_STEP = {
+    Reservation.State.PENDING: "Owning department approves the hold",
+    Reservation.State.HELD: "Receiving department approves the transfer",
+    Reservation.State.COMMITTED: "Custodian dispatches; receiver confirms",
+}
+
+
+def _your_action(user, row):
+    """The step this person can take now, using the same checks as the services."""
+    from django.db.models import Sum
+
+    if row.requested_by_id != user.pk:
+        if row.state == Reservation.State.PENDING and AccessPolicy.has_role(user, Role.DEPT_REP, row.listing.department_id):
+            return "holds", "Approve or reject hold"
+        if row.state == Reservation.State.HELD and AccessPolicy.has_role(user, Role.DEPT_REP, row.request.department_id):
+            return "transfers", "Approve transfer"
+    if row.state == Reservation.State.COMMITTED and AccessPolicy.can_edit_asset(user, row.listing.asset):
+        sent = row.consignments.aggregate(total=Sum("quantity"))["total"] or Decimal(0)
+        if sent < row.quantity:
+            return "dispatch", "Dispatch"
+    for shipment in row.consignments.all():
+        if shipment.receiver_id == user.pk:
+            done = (shipment.receipts.aggregate(t=Sum("quantity"))["t"] or Decimal(0)) + (
+                shipment.resolutions.aggregate(t=Sum("quantity"))["t"] or Decimal(0))
+            if done < shipment.quantity:
+                return "receive", "Confirm receipt"
+    return "", ""
+
+
 @active_role_required
 def queue(request):
-    rows = visible_reservations(request.user).select_related("request", "listing", "listing__department")
-    return render(request, "exchange/queue.html", {"rows": rows})
+    rows = list(visible_reservations(request.user).select_related(
+        "request", "request__department", "listing", "listing__department", "listing__asset").order_by("-created_at"))
+    show = request.GET.get("show", "")
+    mine, others = [], []
+    from django.db.models import Sum
+    for row in rows:
+        row.action_key, row.action_label = _your_action(request.user, row)
+        row.next_step = NEXT_STEP.get(row.state, "")
+        row.status_value, row.status_label = row.state, row.get_state_display()
+        if row.state == Reservation.State.COMMITTED:
+            sent = row.consignments.aggregate(t=Sum("quantity"))["t"] or Decimal(0)
+            done = sum(((c.receipts.aggregate(t=Sum("quantity"))["t"] or Decimal(0))
+                        + (c.resolutions.aggregate(t=Sum("quantity"))["t"] or Decimal(0))) for c in row.consignments.all())
+            if sent >= row.quantity and done >= row.quantity:
+                row.status_value, row.status_label, row.next_step = "COMPLETED", "Completed", ""
+            elif sent > 0:
+                row.status_value, row.status_label = "IN_PROGRESS", "In transit"
+                row.next_step = "Receiver confirms" if sent >= row.quantity else "Custodian dispatches the rest"
+        (mine if row.action_key and (not show or row.action_key == show) else others).append(row)
+    return render(request, "exchange/queue.html", {"mine": mine, "others": others, "show": show, "nav_current": "transfers"})
 
 
 @active_role_required
 def reserve(request, pk):
     need = get_object_or_404(ResourceRequest, pk=pk, requester=request.user, department_id__in=AccessPolicy.departments_with_role(request.user, Role.REQUESTER), state__in=[ResourceRequest.State.APPROVED, ResourceRequest.State.PARTIAL])
-    if not need.listing_id:
-        return render(request, "core/error.html", {"status": 422, "message": "This need has no associated listing. Choose an item before creating a request."}, status=422)
+    # A suggested match (ai:match_decide) may name the listing; it is rechecked here.
+    listing_id = request.GET.get("listing", "")
+    listing_id = int(listing_id) if listing_id.isdigit() else need.listing_id
+    if not listing_id:
+        return render(request, "core/error.html", {"status": 422, "message": "This need has no associated listing. Choose an item from the suggestions or the exchange first."}, status=422)
     try:
-        listing = CatalogueQueryService.get_visible(request.user, need.listing_id)
+        listing = CatalogueQueryService.get_visible(request.user, listing_id)
     except DomainError as exc:
         return domain_error_response(request, exc)
     form = QuantityForm(request.POST or None, initial={"quantity": need.quantity})
@@ -44,7 +94,7 @@ def reserve(request, pk):
         except DomainError as exc:
             return domain_error_response(request, exc, "exchange/reserve.html", {"need": need, "listing": listing, "form": form})
         return redirect("transfer:detail", pk=row.pk)
-    return render(request, "exchange/reserve.html", {"need": need, "listing": listing, "form": form})
+    return render(request, "exchange/reserve.html", {"need": need, "listing": listing, "form": form, "nav_current": "requests"})
 
 
 @active_role_required
@@ -61,9 +111,14 @@ def detail(request, pk):
         shipment.resolved_quantity = sum((event.quantity for event in shipment.resolutions.all()), Decimal(0))
         shipment.remaining_quantity = shipment.quantity - shipment.received_quantity - shipment.resolved_quantity
     can_dispatch = can_dispatch and dispatched < row.quantity
-    context = {"row": row, "source_rep": source_rep, "dest_rep": dest_rep, "can_dispatch": can_dispatch,
+    status_value, status_label = row.state, row.get_state_display()
+    if row.state == Reservation.State.COMMITTED and dispatched > 0:
+        settled = all(s.remaining_quantity <= 0 for s in shipments) and dispatched >= row.quantity
+        status_value, status_label = ("COMPLETED", "Completed") if settled else ("IN_PROGRESS", "In transit")
+    context = {"status_value": status_value, "status_label": status_label,"row": row, "source_rep": source_rep, "dest_rep": dest_rep, "can_dispatch": can_dispatch,
                "can_resolve": can_resolve, "shipments": shipments, "dispatched": dispatched, "undispatched": row.quantity - dispatched}
-    form = DispatchForm(request.POST or None, department=row.request.department)
+    form = DispatchForm(request.POST or None, department=row.request.department,
+                        initial={"quantity": row.quantity, "destination": row.request.destination_id})
     operation_key = request.POST.get("operation_key", "") if request.method == "POST" else uuid.uuid4().hex
     if request.method == "POST":
         action = request.POST.get("action")
@@ -88,7 +143,7 @@ def detail(request, pk):
         except DomainError as exc:
             return domain_error_response(request, exc, "exchange/detail.html", {**context, "form": form, "operation_key": operation_key})
         return redirect("transfer:detail", pk=pk)
-    return render(request, "exchange/detail.html", {**context, "form": form, "operation_key": operation_key})
+    return render(request, "exchange/detail.html", {**context, "form": form, "operation_key": operation_key, "nav_current": "transfers"})
 
 
 @active_role_required

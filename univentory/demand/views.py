@@ -33,9 +33,11 @@ def request_form(request, pk=None, listing_id=None):
             listing = CatalogueQueryService.get_visible(request.user, listing_id)
         except DomainError as exc:
             return domain_error_response(request, exc)
-    initial = {"version": item.version} if item else ({"title": listing.title} if listing else {})
+    initial = {"version": item.version} if item else (
+        {"title": listing.title, "category": listing.asset.category_id} if listing else {})
     initial["operation_key"] = uuid.uuid4().hex
-    form = RequestForm(request.POST or None, instance=item, initial=initial, user=request.user)
+    form = RequestForm(request.POST or None, instance=item, initial=initial, user=request.user,
+                       submitting=request.POST.get("action") == "submit")
     if request.method == "POST" and form.is_valid():
         try:
             saved = DemandService.save(request.user, form.cleaned_data, request_id=pk,

@@ -1,10 +1,110 @@
-{% extends "shared/base.html" %}{% block title %}Reservation{% endblock %}{% block content %}
-<nav class="breadcrumb"><a href="{% url 'transfer:queue' %}">Reservations and transfers</a> / Case {{ row.pk }}</nav>
-<h1>{{ row.listing.title }}</h1><p>{{ row.quantity }} · {{ row.get_state_display }}</p><p>Need: {{ row.request.title }} · From {{ row.listing.department }} to {{ row.request.department }}</p>{% if row.state_reason %}<p>Reason: {{ row.state_reason }}</p>{% endif %}{% if row.expires_at and row.state == 'HELD' %}<p>Hold expires {{ row.expires_at }}</p>{% endif %}
-{% if domain_error %}<div class="alert alert-error" role="alert">{{ domain_error.message }}</div>{% endif %}
-{% if source_rep and row.state == 'PENDING' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ row.version }}"><label for="review-reason">Reason (required to reject)</label><input id="review-reason" name="reason"><button class="button button-primary" name="action" value="hold">Approve hold for {{ row.quantity }}</button> <button class="button" name="action" value="reject">Reject reservation</button></form>{% endif %}
-{% if dest_rep and row.state == 'HELD' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ row.version }}"><button class="button button-primary" name="action" value="commit">Approve transfer of {{ row.quantity }}</button></form>{% endif %}
-{% if can_dispatch and row.state == 'COMMITTED' %}<section class="fieldset-card"><h2>Dispatch</h2><form method="post">{% csrf_token %}<input type="hidden" name="operation_key" value="{{ operation_key }}">{{ form.as_p }}<button class="button button-primary" name="action" value="dispatch">Confirm dispatch</button></form></section>{% endif %}
-{% if row.requested_by_id == user.pk %}{% if row.state == 'PENDING' or row.state == 'HELD' or row.state == 'COMMITTED' %}<form method="post">{% csrf_token %}<input type="hidden" name="version" value="{{ row.version }}"><label for="cancel-reason">Cancellation reason</label><input id="cancel-reason" name="reason" required><button class="button" name="action" value="cancel">Cancel reservation</button></form>{% endif %}{% endif %}
-<p>Dispatched: {{ dispatched }} · Undispatched: {{ undispatched }}</p>
-<h2>Consignments</h2>{% for shipment in shipments %}<p>{{ shipment.quantity }} dispatched {{ shipment.dispatched_at }} to {{ shipment.destination }}. {% if shipment.remaining_quantity > 0 %}{% if shipment.receiver_id == user.pk %}<a href="{% url 'transfer:receipt' shipment.pk %}">Confirm receipt</a>{% endif %} {% if can_resolve %}<a href="{% url 'transfer:resolve' shipment.pk %}">Record return or loss</a>{% endif %}{% else %}Resolved{% endif %}</p>{% for receipt in shipment.receipts.all %}<p>Accepted: {{ receipt.quantity }} on {{ receipt.created_at }}</p>{% endfor %}{% for resolution in shipment.resolutions.all %}<p>{{ resolution.get_kind_display }}: {{ resolution.quantity }} — {{ resolution.reason }}</p>{% endfor %}{% empty %}<p>No consignments have been dispatched.</p>{% endfor %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Reservation {{ row.pk }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'transfer:queue' %}">Transfers</a><span class="sep">/</span><span>Case {{ row.pk }}</span></nav>
+<div class="page-head">
+  <div class="with-thumb"><span class="thumb-sm thumb-lg"><img src="{% item_art row.listing %}" alt="" width="160" height="120"></span><div><h1>{{ row.listing.title }}</h1>
+    <div class="meta-row">
+      <span>{% status_badge status_value status_label %}</span>
+      <span>{% icon "truck" %} {{ row.listing.department.name }} to {{ row.request.department.name }}</span>
+      <span>{% icon "box" %} {{ row.quantity|qty }} unit{{ row.quantity|pluralize }}</span>
+      {% if row.expires_at and row.state == 'HELD' %}<span>{% icon "history" %} Hold expires {{ row.expires_at|date:"j M, H:i" }}</span>{% endif %}
+    </div>
+  </div></div>
+</div>
+
+<ol class="track" aria-label="Progress of this case">
+  {% with s=row.state %}
+  <li class="done">Requested</li>
+  <li class="{% if s == 'PENDING' %}current{% elif s == 'REJECTED' %}stopped{% else %}done{% endif %}">{% if s == 'REJECTED' %}Hold rejected{% else %}Hold approved{% endif %}</li>
+  <li class="{% if s == 'HELD' %}current{% elif s == 'COMMITTED' %}done{% elif s == 'EXPIRED' or s == 'RELEASED' %}stopped{% endif %}">{% if s == 'EXPIRED' %}Hold expired{% elif s == 'RELEASED' %}Released{% else %}Transfer approved{% endif %}</li>
+  <li class="{% if s == 'COMMITTED' and dispatched == 0 %}current{% elif dispatched > 0 %}done{% endif %}">Dispatched</li>
+  <li class="{% if status_value == 'COMPLETED' %}done{% elif dispatched > 0 and undispatched == 0 %}current{% endif %}">Received</li>
+  {% endwith %}
+</ol>
+
+{% if domain_error %}<div class="alert alert-error" role="alert">{% icon "alert" %}<div>{{ domain_error.message }}</div></div>{% endif %}
+
+<div class="grid-2">
+  <div class="stack">
+    {% if source_rep and row.state == 'PENDING' %}
+    <section class="decision">
+      <div class="decision-head">{% icon "lock" %}<h2>Approve the hold for {{ row.listing.department.name }}</h2></div>
+      <form method="post" class="decision-body">{% csrf_token %}<input type="hidden" name="version" value="{{ row.version }}">
+        <p>Approving sets aside <strong>{{ row.quantity|qty }}</strong> unit{{ row.quantity|pluralize }} of <strong>{{ row.listing.title }}</strong> for 48 hours. Stock is rechecked at the moment you approve.</p>
+        <div class="field"><label for="review-reason">Reason (required to reject)</label><input id="review-reason" name="reason"></div>
+        <div class="button-row"><button class="btn btn-primary" name="action" value="hold">{% icon "check" %} Approve hold for {{ row.quantity|qty }}</button>
+          <button class="btn btn-danger-outline" name="action" value="reject">Reject reservation</button></div>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if dest_rep and row.state == 'HELD' %}
+    <section class="decision">
+      <div class="decision-head">{% icon "truck" %}<h2>Approve the transfer into {{ row.request.department.name }}</h2></div>
+      <form method="post" class="decision-body">{% csrf_token %}<input type="hidden" name="version" value="{{ row.version }}">
+        <p>Approving commits the held <strong>{{ row.quantity|qty }}</strong> unit{{ row.quantity|pluralize }} to this transfer and stops the hold timer. The custodian can then dispatch.</p>
+        <button class="btn btn-primary" name="action" value="commit">{% icon "check" %} Approve transfer of {{ row.quantity|qty }}</button>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if can_dispatch and row.state == 'COMMITTED' %}
+    <section class="decision">
+      <div class="decision-head">{% icon "send" %}<h2>Dispatch</h2></div>
+      <form method="post" class="decision-body plain-form">{% csrf_token %}<input type="hidden" name="operation_key" value="{{ operation_key }}">
+        <p class="small muted">Record what is physically leaving. You can dispatch in several consignments; {{ undispatched|qty }} still to send.</p>
+        {{ form.as_p }}
+        <button class="btn btn-primary" name="action" value="dispatch">{% icon "truck" %} Confirm dispatch</button>
+      </form>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <div class="panel-head"><h2>Consignments</h2><p>{{ dispatched|qty }} dispatched, {{ undispatched|qty }} not yet dispatched.</p></div>
+      {% for shipment in shipments %}
+        <div class="panel panel-tight mb-2">
+          <div class="flex wrap between">
+            <strong>{{ shipment.quantity|qty }} unit{{ shipment.quantity|pluralize }} to {{ shipment.destination }}</strong>
+            {% if shipment.remaining_quantity > 0 %}{% tone_badge "info" "In transit" %}{% else %}{% tone_badge "success" "Resolved" %}{% endif %}
+          </div>
+          <p class="small muted mb-2">Dispatched {{ shipment.dispatched_at|date:"j M Y, H:i" }}. Receiver: {{ shipment.receiver.display_name }}.</p>
+          <ul class="small steps-list">
+            {% for receipt in shipment.receipts.all %}<li>Accepted {{ receipt.quantity|qty }} on {{ receipt.created_at|date:"j M, H:i" }}</li>{% endfor %}
+            {% for resolution in shipment.resolutions.all %}<li>{{ resolution.get_kind_display }}: {{ resolution.quantity|qty }}. {{ resolution.reason }}</li>{% endfor %}
+          </ul>
+          {% if shipment.remaining_quantity > 0 %}
+          <div class="button-row mt-2">
+            {% if shipment.receiver_id == user.pk %}<a class="btn btn-primary btn-sm" href="{% url 'transfer:receipt' shipment.pk %}">{% icon "inbox" %} Confirm receipt ({{ shipment.remaining_quantity|qty }} outstanding)</a>{% endif %}
+            {% if can_resolve %}<a class="btn btn-secondary btn-sm" href="{% url 'transfer:resolve' shipment.pk %}">Record return or loss</a>{% endif %}
+          </div>
+          {% endif %}
+        </div>
+      {% empty %}
+        <p class="muted mb-0">Nothing has been dispatched yet.</p>
+      {% endfor %}
+    </section>
+  </div>
+
+  <aside class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>The need</h2></div>
+      <dl class="facts-list">
+        <dt>Request</dt><dd>{{ row.request.title }}</dd>
+        <dt>Requested by</dt><dd>{{ row.requested_by.display_name }}</dd>
+        <dt>From</dt><dd>{{ row.listing.department.name }}</dd>
+        <dt>To</dt><dd>{{ row.request.department.name }}</dd>
+        {% if row.approved_by %}<dt>Hold approved by</dt><dd>{{ row.approved_by.display_name }}</dd>{% endif %}
+        {% if row.state_reason %}<dt>Reason</dt><dd>{{ row.state_reason }}</dd>{% endif %}
+      </dl>
+    </section>
+    {% if row.requested_by_id == user.pk %}{% if row.state == 'PENDING' or row.state == 'HELD' or row.state == 'COMMITTED' %}
+    <form method="post" class="panel panel-tight">{% csrf_token %}<input type="hidden" name="version" value="{{ row.version }}">
+      <div class="field"><label for="cancel-reason">Cancellation reason</label><input id="cancel-reason" name="reason" required></div>
+      <p class="xsmall faint mt-2">Cancelling releases any held units once. Dispatched units must be received or resolved instead.</p>
+      <button class="btn btn-danger-outline btn-sm" name="action" value="cancel">{% icon "x" %} Cancel reservation</button>
+    </form>
+    {% endif %}{% endif %}
+  </aside>
+</div>
+{% endblock %}

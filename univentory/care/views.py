@@ -23,7 +23,18 @@ def care_list(request):
     representatives = AccessPolicy.departments_with_role(request.user, Role.DEPT_REP)
     reports = DefectReport.objects.filter(Q(reported_by=request.user, asset__department_id__in=departments) | Q(portion__department_id__in=maintenance)).select_related("asset").distinct()
     cases = MaintenanceCase.objects.filter(Q(portion__department_id__in=maintenance + representatives) | Q(defect__asset__custodian=request.user, portion__department_id__in=departments)).select_related("defect__asset").distinct()
-    return render(request, "care/list.html", {"portions": portions, "reports": reports, "cases": cases, "maintenance_departments": maintenance, "nav_current": "care"})
+    from core import charts
+    case_list = list(cases)
+    stats = {"open": sum(1 for c in case_list if c.state != MaintenanceCase.State.CLOSED),
+             "approval": sum(1 for c in case_list if c.state == MaintenanceCase.State.AWAITING_APPROVAL),
+             "success": sum(1 for c in case_list if c.outcome in ("SUCCESS", "NO_REPAIR")),
+             "failed": sum(1 for c in case_list if c.outcome == "FAILED"),
+             "reports": len(list(reports))}
+    seg = [("Successful", stats["success"]), ("Failed", stats["failed"]), ("In progress", stats["open"])]
+    return render(request, "care/list.html", {"portions": portions, "reports": reports, "cases": case_list,
+                  "maintenance_departments": maintenance, "nav_current": "care", "stats": stats,
+                  "donut": charts.donut(seg, center_value=str(len(case_list)), center_label="cases"),
+                  "legend": charts.legend([n for n, _ in seg], [v for _, v in seg])})
 
 
 @active_role_required

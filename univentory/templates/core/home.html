@@ -1,0 +1,88 @@
+{% extends "shared/base.html" %}{% load i18n ui %}
+{% block title %}{% trans "Workbench" %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% blocktrans with name=user.display_name|split_words|first %}Welcome back, {{ name }}{% endblocktrans %}</h1>
+    <p>{% now "l j F" %}</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'catalogue:exchange' %}">{% icon "search" %} {% trans "Find an item" %}</a>
+</div>
+
+<div class="stats">
+  <a class="stat is-hero" href="#waiting">
+    <span class="stat-label">{% trans "Waiting on you" %}</span>
+    <span class="stat-icon">{% icon "inbox" %}</span>
+    <span class="stat-value">{{ waiting_total }}</span>
+    <span class="stat-foot"><span>{% blocktrans count n=waiting|length %}{{ n }} kind of task{% plural %}{{ n }} kinds of task{% endblocktrans %}</span></span>
+  </a>
+  <a class="stat" href="{% url 'catalogue:exchange' %}">
+    <span class="stat-label">{% trans "On the exchange" %}</span>
+    <span class="stat-icon">{% icon "tag" %}</span>
+    <span class="stat-value">{{ listed_now }}<small>{% trans "items" %}</small></span>
+    <span class="stat-foot"><span>{% trans "New listings by month" %}</span>{{ listed_spark }}</span>
+  </a>
+  <div class="stat tone-3">
+    <span class="stat-label">{% trans "Units reused" %}</span>
+    <span class="stat-icon">{% icon "recycle" %}</span>
+    <span class="stat-value">{{ reused }}<small>{% trans "units" %}</small></span>
+    <span class="stat-foot"><span>{% trans "Last 6 months" %}</span>{{ reused_spark }}</span>
+  </div>
+  {% if fourth %}
+  <a class="stat tone-{{ fourth.tone }}" href="{% url fourth.url %}">
+    <span class="stat-label">{{ fourth.label }}</span>
+    <span class="stat-icon">{% icon fourth.icon %}</span>
+    <span class="stat-value">{{ fourth.value }}{% if fourth.unit %}<small>{{ fourth.unit }}</small>{% endif %}</span>
+    <span class="stat-foot"><span>{{ fourth.foot }}</span>{% if fourth.spark %}{{ fourth.spark }}{% endif %}</span>
+  </a>
+  {% endif %}
+</div>
+
+<section id="waiting" aria-labelledby="waiting-h">
+  <div class="dash-head"><h2 id="waiting-h">{% trans "Waiting on you" %}</h2></div>
+  {% if cards %}
+  <ul class="item-cards">
+    {% for c in cards %}
+    <li><a class="item-card" href="{{ c.url }}">
+      <span class="thumb"><span class="badge badge-attention">{{ c.task }}</span><img src="{% item_art c.title %}" alt="" width="160" height="120" loading="lazy"></span>
+      <span class="body"><span class="title">{{ c.title }}</span><span class="sub">{{ c.sub }}</span><span class="act">{{ c.action }} {% icon "chevron" "icon-sm icon-flip" %}</span></span>
+    </a></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty empty-inline">{% trans "You are all caught up. New approvals, deliveries and repairs for you appear here." %}</div>
+  {% endif %}
+  <div class="chips mt-4">
+    {% for t in tasks %}<a class="chip" href="{{ t.url }}">{% icon t.icon "icon-sm" %} {{ t.title }}{% if t.count %} <strong>{{ t.count }}</strong>{% endif %}</a>{% endfor %}
+  </div>
+</section>
+
+<div class="dash mt-5">
+  <section class="panel chart-panel">
+    <div class="panel-head"><h2>{% trans "Exchange activity" %}</h2><span class="actions">{% trans "Last 6 months" %}</span></div>
+    {{ activity_legend }}
+    {{ activity }}
+    {{ activity_table }}
+  </section>
+  <section class="panel chart-panel">
+    <div class="panel-head"><h2>{% trans "Free units by category" %}</h2><span class="actions">{% trans "Now" %}</span></div>
+    <ul class="hbars">
+      {% for c in categories %}<li><span>{{ c.name }}</span><span class="track"><span class="fill" style="width:{{ c.pct }}%"></span></span><strong>{{ c.value|fmt }}</strong></li>
+      {% empty %}<li class="muted">{% trans "Nothing listed yet." %}</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+
+{% if recent %}
+<div class="dash-head"><h2>{% trans "New on the exchange" %}</h2><a class="end" href="{% url 'catalogue:exchange' %}">{% trans "See all" %}</a></div>
+<ul class="item-cards">
+  {% for l in recent %}
+  <li><a class="item-card" href="{% url 'catalogue:listing_detail' l.pk %}">
+    <span class="thumb"><img src="{% item_art l %}" alt="" width="160" height="120" loading="lazy"></span>
+    <span class="body"><span class="title">{{ l.title }}</span><span class="sub">{{ l.department.name }}</span>
+      <span class="flex between mt-2"><span class="free-qty">{{ l.free_qty|qty:l.asset }}<small>{% trans "free" %}</small></span>{% condition_badge l.portion.condition l.portion.get_condition_display %}</span></span>
+  </a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

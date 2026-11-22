@@ -1,3 +1,59 @@
-{% extends "shared/base.html" %}{% block title %}Care{% endblock %}{% block content %}<h1>Care</h1><p>Report defects on your assigned assets. A report restricts the affected portion until it is reviewed.</p>
-<p><a href="{% url 'final_actions:list' %}">View final actions</a></p><h2>Assigned portions</h2>{% for portion in portions %}<p>{{ portion.asset.title }} — {{ portion.quantity }} · {{ portion.get_safety_state_display }} <a href="{% url 'care:report' portion.pk %}">Report a defect</a> · <a href="{% url 'final_actions:propose' portion.pk %}">Propose final action</a></p>{% empty %}<p>No assigned portions.</p>{% endfor %}
-<h2>Reported defects</h2>{% for report in reports %}<p>{{ report.asset.title }} — {{ report.description }} · {{ report.created_at }} {% if report.portion.department_id in maintenance_departments %}<a href="{% url 'care:inspect' report.pk %}">Inspect</a>{% endif %}</p>{% empty %}<p>No defects reported.</p>{% endfor %}<h2>Maintenance cases</h2>{% for case in cases %}<p><a href="{% url 'care:case' case.pk %}">{{ case.defect.asset.title }} — {{ case.get_state_display }}</a></p>{% empty %}<p>No maintenance cases.</p>{% endfor %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Care{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Care</h1><p>Report, inspect, repair, verify.</p></div>
+  <a class="btn btn-secondary" href="{% url 'final_actions:list' %}">{% icon "recycle" %} Final actions</a>
+</div>
+
+<div class="dash">
+  <div class="stats mb-0">
+    <div class="stat is-hero"><span class="stat-label">Open cases</span><span class="stat-icon">{% icon "wrench" %}</span><span class="stat-value">{{ stats.open }}</span><span class="stat-foot"><span>{{ stats.approval }} waiting for spend approval</span></span></div>
+    <div class="stat tone-2"><span class="stat-label">Defects reported</span><span class="stat-icon">{% icon "alert" %}</span><span class="stat-value">{{ stats.reports }}</span><span class="stat-foot"><span>All reports to date</span></span></div>
+    <div class="stat tone-3"><span class="stat-label">Returned to use</span><span class="stat-icon">{% icon "check-circle" %}</span><span class="stat-value">{{ stats.success }}</span><span class="stat-foot"><span>Independently verified</span></span></div>
+    <div class="stat tone-4"><span class="stat-label">Failed repairs</span><span class="stat-icon">{% icon "x" %}</span><span class="stat-value">{{ stats.failed }}</span><span class="stat-foot"><span>Stay blocked for a new decision</span></span></div>
+  </div>
+  <section class="panel chart-panel"><div class="panel-head"><h2>Case outcomes</h2></div><div class="donut-row">{{ donut }}{{ legend }}</div></section>
+</div>
+
+<h2 class="section-title">Maintenance cases</h2>
+{% if cases %}
+<div class="table-wrap mb-5">
+  <table class="data">
+    <thead><tr><th>Asset</th><th>Department</th><th>Stage</th><th>Outcome</th><th>Opened</th></tr></thead>
+    <tbody>{% for case in cases %}
+      <tr><td><div class="with-thumb"><span class="thumb-sm"><img src="{% item_art case.defect.asset %}" alt="" width="160" height="120" loading="lazy"></span><a class="row-title" href="{% url 'care:case' case.pk %}">{{ case.defect.asset.title }}</a></div>{% if case.previous_case_id %} <span class="badge badge-info">Rework</span>{% endif %}</td>
+        <td>{{ case.portion.department.name }}</td><td>{% status_badge case.state case.get_state_display %}</td>
+        <td>{% if case.outcome %}{% status_badge case.outcome case.outcome|key_label %}{% else %}<span class="faint">Open</span>{% endif %}</td><td>{{ case.created_at|date:"j M Y" }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty empty-inline mb-5">No maintenance cases.</div>{% endif %}
+
+<h2 class="section-title">Reported defects</h2>
+{% if reports %}
+<div class="table-wrap mb-5">
+  <table class="data">
+    <thead><tr><th>Asset</th><th>Problem</th><th>Reported</th><th></th></tr></thead>
+    <tbody>{% for report in reports %}
+      <tr><td><div class="with-thumb"><span class="thumb-sm"><img src="{% item_art report.asset %}" alt="" width="160" height="120" loading="lazy"></span><span class="strong">{{ report.asset.title }}</span></div></td><td>{{ report.description }}</td><td>{{ report.created_at|date:"j M Y" }}<br><span class="xsmall faint">{{ report.reported_by.display_name }}</span></td>
+        <td>{% if report.portion.department_id in maintenance_departments %}<a class="btn btn-primary btn-sm" href="{% url 'care:inspect' report.pk %}">Inspect</a>{% endif %}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty empty-inline mb-5">No defects reported.</div>{% endif %}
+
+{% if portions %}
+<h2 class="section-title">Your assigned assets</h2>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Asset</th><th class="num">Quantity</th><th>Safety</th><th>State</th><th></th></tr></thead>
+    <tbody>{% for portion in portions %}
+      <tr><td><a class="row-title" href="{% url 'inventory:asset_detail' portion.asset_id %}">{{ portion.asset.title }}</a></td><td class="num">{{ portion.quantity|qty }}</td>
+        <td>{% safety_badge portion %}</td><td>{% lifecycle_badge portion.lifecycle_state portion.get_lifecycle_state_display %}</td>
+        <td><div class="button-row"><a class="btn btn-secondary btn-sm" href="{% url 'care:report' portion.pk %}">Report defect</a><a class="btn btn-ghost btn-sm" href="{% url 'final_actions:propose' portion.pk %}">Propose final action</a></div></td></tr>
+    {% endfor %}</tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

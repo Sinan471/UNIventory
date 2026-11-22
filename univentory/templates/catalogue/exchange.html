@@ -2,7 +2,7 @@
 {% block title %}{% trans "Exchange" %}{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><span class="eyebrow">{% trans "Campus resource exchange" %}</span><h1>{% trans "Find before you buy" %}</h1></div>
+  <div><h1>{% trans "Find before you buy" %}</h1><p>{% trans "Reusable items from every department." %}</p></div>
 </div>
 
 <form method="get" data-catalogue role="search" aria-label="{% trans 'Search the exchange' %}">
@@ -12,6 +12,13 @@
     {{ form.q }}
     <button class="btn btn-primary" type="submit">{% icon "search" %} <span>{% trans "Search" %}</span></button>
   </div>
+
+  <ul class="cat-tiles" aria-label="{% trans 'Browse by category' %}">
+    {% for c in form.fields.category.queryset %}
+    <li><a class="cat-tile" href="?category={{ c.pk }}&amp;view={{ view_mode }}" {% if form.category.value|stringformat:"s" == c.pk|stringformat:"s" %}aria-current="true"{% endif %}>
+      <img src="{% category_item_art c %}" alt="" width="160" height="120"><span>{{ c.name }}</span></a></li>
+    {% endfor %}
+  </ul>
 
   <div class="discovery">
     <aside class="filters" aria-label="{% trans 'Filters' %}">
@@ -59,7 +66,7 @@
         <ul class="asset-list">
           {% for listing in page.object_list %}{% with asset=listing.asset photo=photos|get_item:listing.pk %}
           <li class="asset-row">
-            <div class="asset-media">{% if photo %}<img src="{% evidence_url photo %}" alt="" loading="lazy" width="96" height="72">{% else %}<img class="illustration" src="{% category_art asset.category %}" alt="" width="60" height="50">{% endif %}</div>
+            <div class="asset-media">{% if photo %}<img src="{% evidence_url photo %}" alt="" loading="lazy" width="96" height="72">{% else %}<img class="illustration" src="{% item_art asset %}" alt="" width="60" height="50">{% endif %}</div>
             <div>
               <h3><a href="{% url 'catalogue:listing_detail' listing.pk %}">{{ listing.title }}</a></h3>
               <div class="asset-meta">
@@ -79,11 +86,10 @@
           {% for listing in page.object_list %}{% with asset=listing.asset photo=photos|get_item:listing.pk %}
           <li>
             <article class="asset-card">
-              <div class="asset-media">{% if photo %}<img src="{% evidence_url photo %}" alt="" loading="lazy" width="320" height="240">{% else %}<img class="illustration" src="{% category_art asset.category %}" alt="" width="160" height="133">{% endif %}</div>
+              <div class="asset-media">{% if photo %}<img src="{% evidence_url photo %}" alt="" loading="lazy" width="320" height="240">{% else %}<img class="illustration" src="{% item_art asset %}" alt="" width="160" height="133">{% endif %}</div>
               <div class="asset-body">
-                <span class="small muted"><span class="asset-code">{{ asset.asset_code }}</span> · {{ asset.category }}</span>
                 <h3><a href="{% url 'catalogue:listing_detail' listing.pk %}">{{ listing.title }}</a></h3>
-                <p class="small muted mb-0">{{ listing.public_description|truncatechars:90 }}</p>
+                <span class="small muted">{{ listing.department.name }}</span>
                 <div class="asset-meta">
                   {% with p=listing.portion %}{% condition_badge p.condition p.get_condition_display %}{% endwith %}
                   <span>{% icon "map-pin" %} {{ listing.portion.location.name }}</span>

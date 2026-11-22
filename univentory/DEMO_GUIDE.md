@@ -1,0 +1,91 @@
+# UNIventory demo guide
+
+All people and records are synthetic. Development sign-in is a test adapter,
+not KU SSO.
+
+## 1. Set up (about 1 minute)
+
+From the `univentory` folder:
+
+```bash
+.venv/Scripts/python -m pip install -r requirements.txt   # first time only
+cp .env.example .env                                       # first time only
+.venv/Scripts/python manage.py demo_reset --yes           # wipes the LOCAL SQLite database and rebuilds the demo
+.venv/Scripts/python manage.py runserver
+```
+
+Open <http://127.0.0.1:8000/> and click a profile card to sign in. Sign out
+from the account menu (top right). The theme starts dark; the moon/sun button
+in the top bar switches to light and remembers the choice.
+
+Run `demo_reset --yes` before each rehearsal. It only runs with
+`DJANGO_DEBUG=true` and SQLite.
+
+## 2. The cast: one person per job
+
+| Person | Job | What they do in the demo |
+|---|---|---|
+| **Sara Ibrahim** | Requester, Chemistry | Asks for items, reserves them, confirms deliveries |
+| **Mariam Al Hammadi** | Asset custodian | Lists surplus, publishes it, dispatches transfers, reports faults |
+| **Khalid Al Suwaidi** | Department representative | Approves needs, releases listings, approves holds, transfers, repair spend and final actions |
+| **Rashid Al Nuaimi** | Maintenance | Inspects defects, repairs, verifies a colleague's repair |
+| **Reem Al Ketbi** | Impact and reports | Sustainability dashboard, reports, publishes a summary |
+| **Salma Yousuf** | Auditor | Reads and exports the audit trail |
+| **Hessa Al Mansoori** | Administrator | People, roles and reference data; no approval power |
+| **Tariq Aziz** | No role yet | Signed in but sees nothing (access check) |
+
+Colleagues such as Ali Mahmoud, Dana Yousef and Lina Haddad appear in the
+records (six months of history, a second maintenance signature) but cannot
+sign in, so the demo stays simple.
+
+## 3. How the people connect
+
+```
+Mariam lists ──► Khalid releases ──► Mariam publishes ──► Sara requests
+                                                              │
+Sara confirms receipt ◄── Mariam dispatches ◄── Khalid approves need, hold, transfer
+        │
+        ▼
+Reem sees it on Impact and Reports        Salma sees every step in Audit
+```
+
+Repairs: Mariam reports a defect ──► Rashid inspects ──► Khalid approves the
+spend ──► Rashid repairs ──► a different technician verifies.
+
+## 4. What is staged after a reset
+
+| Who | Waiting on their Workbench |
+|---|---|
+| Sara | Confirm the last 2 monitors of a partial delivery |
+| Mariam | Publish the sit-stand desks (released); dispatch 2 whiteboards (approved) |
+| Khalid | 2 needs, drill listing to release, centrifuge hold, microscope transfer, balance repair spend, recycling proposal |
+| Rashid | Hotplate defect to inspect; a document-camera repair to verify |
+| Reem | Six months of reuse, savings, diversion and repair data |
+
+## 5. Suggested 10-minute script
+
+1. **Sign-in page.** One profile per job. Point out the KU SSO button (OIDC with PKCE) and that the demo profiles exist only on a development server.
+2. **Khalid's Workbench.** Stat tiles, *Waiting on you* item cards, exchange activity chart and stock by category. Approve the **drill release** and the **centrifuge hold**.
+3. **Mariam.** Workbench card *Ready to publish* ▸ **Publish** the desks. Open **Exchange**: category tiles, item cards and filters. Open an asset ▸ **Next steps** tab (sustainable-action advice).
+4. **Sara.** Find the desks ▸ **Request this item** ▸ submit. On the request page show the progress track, quantity breakdown and **Suggested items** (AI matching with a factor breakdown). Then confirm the **last 2 monitors** on her Workbench: the partial delivery completes.
+5. **Khalid.** Approve Sara's desk need, the hold and the transfer. Approve the **microscope transfer** too.
+6. **Mariam.** Dispatch the desk to Sara (receiver Sara, a Chemistry location).
+7. **Sara.** Confirm receipt. The request is now **Fulfilled**; the bell shows each step.
+8. **Rashid.** Inspect the hotplate. Verify the document-camera repair (he did not do that repair, so he can verify it).
+9. **Reem.** **Impact**: reused units, avoided purchases, net savings, carbon estimate, monthly trend, diversion donut, repair outcomes; open *How every figure is calculated*. **Reports**: volume chart, CSV export, **Draft a summary** ▸ add a wrong number ▸ **Publish** is blocked ▸ fix ▸ publish.
+10. **Salma** ▸ Audit history. **Tariq** ▸ no access anywhere.
+
+## 6. Talking points
+
+* **Independence.** Nobody approves their own request; administrators have no approval power. The server enforces it, not hidden buttons.
+* **Stock integrity.** A hold is only granted after a fresh stock check; twenty competing approvals for the last unit produce one hold. A repeated receipt has no second effect.
+* **Only accepted units count.** Holds and dispatches never mark a need as fulfilled.
+* **Evidence-based impact.** Every figure opens its formula and inputs; missing evidence is Unknown, never zero.
+* **AI as assistance.** Matching, advice, the assistant and report drafting suggest; people decide. Suggestions marked *Assisted* run on the documented rule-based fallback because no live model is configured.
+
+## 7. Honest limits
+
+* KU SSO is built but needs KU's client registration.
+* No live AI model is configured (see above).
+* Hold expiry needs `python manage.py run_work` on a schedule.
+* All figures come from synthetic records and demonstrate the formulas only.

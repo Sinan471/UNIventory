@@ -1,0 +1,71 @@
+{% extends "shared/base.html" %}{% load static ui %}
+{% block title %}Assistant{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Campus assistant</h1>
+  <p>Ask about items, your requests or how approvals work. Answers use only records you can see.</p></div>
+  <span class="ai-note" title="Rule-based fallback; no live AI model is configured on this server">{% icon "sparkle" %} Assisted<span class="visually-hidden"> (rule-based, no live model)</span></span>
+</div>
+
+<div class="grid-2">
+  <div>
+    <div class="chat" aria-live="polite">
+      {% for turn in history %}
+        {% if turn.role == "user" %}
+          <div class="bubble bubble-user">{{ turn.text }}</div>
+        {% else %}
+          <div class="bubble bubble-bot">
+            <p class="mb-0">{{ turn.text }}</p>
+            {% if turn.links %}<ul>{% for link in turn.links %}<li><a href="{{ link.url }}">{{ link.label }}</a></li>{% endfor %}</ul>{% endif %}
+            {% if turn.source %}<p class="xsmall faint mt-2 mb-0">Source: {{ turn.source }}</p>{% endif %}
+            {% if turn.preview and forloop.last %}
+            <form method="post" action="{% url 'ai:assistant_confirm' %}" class="panel panel-tight mt-4">
+              {% csrf_token %}<input type="hidden" name="operation_key" value="{{ operation_key }}">
+              <h3>Request preview</h3>
+              <p class="small muted">Check every field. Nothing is submitted until you confirm, and the draft still goes through normal approval.</p>
+              <div class="form-grid">
+                <div class="field span-2"><label for="pv-title">Title</label><input id="pv-title" name="title" value="{{ turn.preview.title }}" maxlength="160" required></div>
+                <div class="field span-2"><label for="pv-purpose">Purpose</label><textarea id="pv-purpose" name="purpose" rows="2" required>{{ turn.preview.purpose }}</textarea></div>
+                <div class="field"><label for="pv-qty">Quantity</label><input id="pv-qty" name="quantity" type="number" min="1" step="1" value="{{ turn.preview.quantity }}" required></div>
+                <div class="field"><label for="pv-dept">Department</label><select id="pv-dept" name="department">{% for d in departments %}<option value="{{ d.pk }}">{{ d.name }}</option>{% endfor %}</select></div>
+              </div>
+              <label class="check mt-2"><input type="checkbox" name="confirmed" value="yes" required> I have reviewed these details</label>
+              <button class="btn btn-primary btn-sm mt-2" type="submit">{% icon "check" %} Create draft request</button>
+            </form>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% empty %}
+        <div class="bubble bubble-bot">
+          <p>Try one of these, or type your own question.</p>
+          <form method="post" class="suggestions">{% csrf_token %}<input type="hidden" name="action" value="ask">
+            <button name="message" value="We need 2 microscopes for a teaching lab">We need 2 microscopes for a teaching lab</button>
+            <button name="message" value="What is the status of my requests?">What is the status of my requests?</button>
+            <button name="message" value="How long does a hold last?">How long does a hold last?</button>
+            <button name="message" value="Who approves a transfer?">Who approves a transfer?</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+    <form method="post" class="chat-form">{% csrf_token %}<input type="hidden" name="action" value="ask">
+      <label class="visually-hidden" for="msg">Your question</label>
+      <input id="msg" name="message" maxlength="500" placeholder="Ask about items, requests or approvals" autocomplete="off" autofocus>
+      <button class="btn btn-primary" type="submit">{% icon "send" %} Ask</button>
+    </form>
+  </div>
+  <aside class="stack">
+    <section class="panel">
+      <h3>What the assistant can and cannot do</h3>
+      <ul class="small steps-list">
+        <li>Finds released items you are allowed to see and links to them.</li>
+        <li>Shows the status of your own requests.</li>
+        <li>Explains approval, hold, receipt, repair and disposal rules from approved guidance.</li>
+        <li>Prepares a request draft only after you review and confirm it.</li>
+        <li>It cannot approve, reserve, transfer or dispose of anything. Text inside listings is treated as content, never as instructions.</li>
+      </ul>
+    </section>
+    {% if history %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="clear"><button class="btn btn-ghost btn-sm" type="submit">{% icon "x" %} Clear conversation</button></form>{% endif %}
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'ai/assistant.js' %}?v=1" defer></script>{% endblock %}

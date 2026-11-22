@@ -16,7 +16,7 @@
     {% for person in rows %}
       <tr>
         <td><a class="row-title" href="{% url 'identity:person_detail' person.pk %}">{{ person.display_name }}</a><div class="small muted">{{ person.email }}</div></td>
-        <td>{% for g in person.role_grants.all %}{% if g.is_active %}<span class="badge badge-neutral">{{ g.role.name }}{% if g.department %} · {{ g.department.code }}{% endif %}</span> {% endif %}{% empty %}<span class="muted">{% trans "No role" %}</span>{% endfor %}</td>
+        <td>{% for g in person.role_grants.all %}{% if g.is_active %}<span class="badge badge-neutral">{{ g.role.name }}{% if g.department %}, {{ g.department.code }}{% endif %}</span> {% endif %}{% empty %}<span class="muted">{% trans "No role" %}</span>{% endfor %}</td>
         <td>{% if person.is_active %}{% trans "Enabled" as l %}{% tone_badge "success" l %}{% else %}{% trans "Disabled" as l %}{% tone_badge "danger" l %}{% endif %}</td>
       </tr>
     {% empty %}<tr><td colspan="3" class="muted">{% trans "No people match." %}</td></tr>{% endfor %}

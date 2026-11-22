@@ -7,7 +7,20 @@ the same release (Phase 4–5 design, ADR-01).
 This folder holds the application source. The phase documents at the
 repository root remain the requirements baseline.
 
-## Current status: Increment 1–2, Jesher's part
+## Demo in one command
+
+```bash
+cp .env.example .env
+.venv/Scripts/python manage.py demo_reset --yes   # DEBUG + SQLite only; wipes the local database
+.venv/Scripts/python manage.py runserver
+```
+
+Then follow [DEMO_GUIDE.md](DEMO_GUIDE.md) for the cast, the staged
+scenarios and a role-by-role script. A review of the plan against the phase
+documents, the security pass and the remaining open items is in
+[docs/PLAN_REVIEW.md](docs/PLAN_REVIEW.md).
+
+## Status at the start of this branch: Increment 1–2, Jesher's part
 
 | Part | Owner | State in this branch |
 |------|-------|----------------------|

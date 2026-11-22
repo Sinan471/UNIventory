@@ -1,4 +1,4 @@
-{% extends "shared/base.html" %}{% load i18n ui %}
+{% extends "shared/base.html" %}{% load i18n static ui %}
 {% block title %}{% if asset %}{% trans "Edit" %} {{ asset.asset_code }}{% else %}{% trans "Register asset" %}{% endif %}{% endblock %}
 {% block content %}
 <nav class="breadcrumb"><a href="{% url 'inventory:my_assets' %}">{% trans "My Assets" %}</a> / {% if asset %}<a href="{% url 'inventory:asset_detail' asset.pk %}">{{ asset.asset_code }}</a> / {% trans "Edit" %}{% else %}{% trans "Register" %}{% endif %}</nav>
@@ -69,7 +69,7 @@
       <section class="panel">
         <h2>{% trans "Classification suggestions" %}</h2>
         {# Mount point for Jessica's ClassificationService review widget (AI-01, AI-02). #}
-        <div data-mount="classification" data-form="asset-form" data-asset="{{ asset.pk|default:'' }}">
+        <div data-mount="classification" data-form="asset-form" data-asset="{{ asset.pk|default:'' }}" data-endpoint="{% url 'ai:classify' %}">
           <p class="muted small mb-0">{% trans "The AI classification assistant is not installed yet. Enter category, tags and description manually; nothing is lost." %}</p>
         </div>
       </section>
@@ -90,3 +90,4 @@
 </form>
 {{ subcategories|json_script:"subcategory-data" }}
 {% endblock %}
+{% block scripts %}<script src="{% static 'ai/classify.js' %}?v=1" defer></script>{% endblock %}

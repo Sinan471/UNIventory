@@ -1,0 +1,37 @@
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}{{ snap.title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'reporting:index' %}">Reports</a><span class="sep">/</span><span>{{ snap.title }}</span></nav>
+<div class="page-head">
+  <div><h1>{{ snap.title }}</h1>
+    <div class="meta-row"><span>{% status_badge snap.status snap.get_status_display %}</span><span>Snapshot {{ snap.pk }}</span>
+      <span>Created {{ snap.created_at|date:"j M Y, H:i" }}{% if snap.created_by %} by {{ snap.created_by.display_name }}{% endif %}</span>
+      {% if snap.published_at %}<span>Published {{ snap.published_at|date:"j M Y, H:i" }} by {{ snap.published_by.display_name }}</span>{% endif %}</div>
+  </div>
+  <a class="btn btn-secondary" href="{% url 'reporting:export_csv' snap.pk %}">{% icon "download" %} Snapshot CSV</a>
+</div>
+<div class="grid-2">
+  <div>
+    {% if problems %}<div class="alert alert-error" role="alert">{% icon "alert" %}<div><strong>These numbers are not in the snapshot: {{ problems|join:", " }}.</strong><p class="mb-0">Correct or remove them. Figures in a published report must match the saved data.</p></div></div>{% endif %}
+    {% if snap.status == 'PUBLISHED' %}
+      <section class="panel"><div class="prose"><p>{{ snap.published_content }}</p></div></section>
+    {% elif can_publish %}
+      <form method="post" class="panel">{% csrf_token %}
+        <div class="panel-head"><h2>Narrative draft</h2><span class="ai-note" title="Rule-based fallback; no live AI model is configured on this server">{% icon "sparkle" %} Assisted<span class="visually-hidden"> (rule-based, no live model)</span></span>
+          <p>Edit freely. Keep every figure as it appears in the snapshot on the right.</p></div>
+        <div class="field"><label for="narrative">Text</label><textarea id="narrative" name="narrative" rows="14">{{ snap.narrative_draft }}</textarea></div>
+        <div class="button-row mt-4"><button class="btn btn-secondary" name="action" value="save" type="submit">Save draft</button>
+          <button class="btn btn-primary" name="action" value="publish" type="submit">{% icon "send" %} Publish</button></div>
+      </form>
+    {% else %}
+      <section class="panel"><div class="prose"><p>{{ snap.narrative_draft }}</p></div></section>
+    {% endif %}
+  </div>
+  <aside class="panel">
+    <div class="panel-head"><h2>Saved figures</h2><p>Fixed when the snapshot was taken. Refreshing data creates a new snapshot.</p></div>
+    <dl class="facts-list">
+      {% for key, value in snap.data_snapshot.items %}<dt>{{ key|key_label }}</dt><dd class="num">{% if value is True %}Yes{% elif value is False %}No{% else %}{{ value|join_if_list }}{% endif %}</dd>{% endfor %}
+    </dl>
+  </aside>
+</div>
+{% endblock %}

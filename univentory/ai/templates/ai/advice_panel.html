@@ -1,0 +1,19 @@
+{% load ui %}{% if show %}
+<section class="panel" aria-labelledby="advice-h">
+  <div class="panel-head">
+    <h2 id="advice-h">{% icon "sparkle" %} Next-step advice</h2>
+    <span class="ai-note" title="Rule-based fallback; no live AI model is configured on this server">{% icon "sparkle" %} Assisted<span class="visually-hidden"> (rule-based, no live model)</span></span>
+    <p>Options for this item, compared. Advice is not approval. Evidence: <strong>{{ advice.status }}</strong>{% if advice.missing %}, missing {{ advice.missing|join:", " }}{% endif %}.</p>
+  </div>
+  <table class="data">
+    <thead><tr><th>Option</th><th>Assessment</th><th>Why</th></tr></thead>
+    <tbody>{% for r in advice.rows %}<tr><td class="strong">{{ r.action }}</td><td>{% tone_badge r.tone r.verdict|capfirst %}</td><td class="small">{{ r.reason }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% if can_act %}
+  <div class="button-row mt-4">
+    <a class="btn btn-secondary btn-sm" href="{% url 'care:report' portion.pk %}">{% icon "wrench" %} Report a defect</a>
+    <a class="btn btn-secondary btn-sm" href="{% url 'final_actions:propose' portion.pk %}">{% icon "recycle" %} Propose a final action</a>
+  </div>
+  {% endif %}
+</section>
+{% endif %}

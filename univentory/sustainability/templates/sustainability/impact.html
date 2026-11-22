@@ -1,0 +1,85 @@
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Impact{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Impact</h1><p>Reuse, savings and diversion from recorded evidence.</p></div>
+  <div class="actions">
+    <a class="btn btn-secondary" href="{% url 'reporting:index' %}">{% icon "bar-chart" %} Reports</a>
+    <a class="btn btn-ghost" href="{% url 'ai:monitoring' %}">AI monitoring</a>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat is-hero">
+    <span class="stat-label">Units reused</span><span class="stat-icon">{% icon "recycle" %}</span>
+    <span class="stat-value">{{ reused }}<small>units</small></span>
+    <span class="stat-foot"><span>Accepted receipts</span>{{ reused_spark }}</span>
+  </div>
+  <div class="stat tone-4">
+    <span class="stat-label">Avoided purchases</span><span class="stat-icon">{% icon "coins" %}</span>
+    <span class="stat-value">{{ avoided }}<small>AED</small></span>
+    <span class="stat-foot"><span>Procurement-validated</span>{{ avoided_spark }}</span>
+  </div>
+  <div class="stat tone-3">
+    <span class="stat-label">Net savings</span><span class="stat-icon">{% icon "trend" %}</span>
+    <span class="stat-value">{{ net }}<small>AED</small></span>
+    <span class="stat-foot"><span>After transfer and repair costs</span></span>
+  </div>
+  <div class="stat tone-3">
+    <span class="stat-label">Carbon avoided</span><span class="stat-icon">{% icon "leaf" %}</span>
+    <span class="stat-value">{% if carbon %}{{ carbon }}<small>kg CO2e</small>{% else %}<small>Unknown</small>{% endif %}</span>
+    <span class="stat-foot"><span>{{ carbon_status }}</span></span>
+  </div>
+</div>
+
+<div class="dash">
+  <section class="panel chart-panel">
+    <div class="panel-head"><h2>Units reused per month</h2><span class="actions">Last 6 months</span></div>
+    {{ trend }}
+    {{ trend_table }}
+  </section>
+  <section class="panel chart-panel">
+    <div class="panel-head"><h2>Where unwanted items went</h2><span class="actions">Waste diversion</span></div>
+    <div class="donut-row">{{ outcome_donut }}{{ outcome_legend }}</div>
+    {{ outcome_table }}
+  </section>
+</div>
+
+<div class="dash even">
+  <section class="panel chart-panel">
+    <div class="panel-head"><h2>Savings</h2><span class="actions">AED</span></div>
+    <ul class="hbars">
+      {% for s in savings %}<li><span>{{ s.name }}</span><span class="track"><span class="fill s{{ s.tone }}" style="width:{{ s.pct }}%"></span></span><strong>{{ s.value }}</strong></li>{% endfor %}
+    </ul>
+  </section>
+  <section class="panel chart-panel">
+    <div class="panel-head"><h2>Repair outcomes</h2><span class="actions">{% if life.value %}Life extended {{ life.value|floatformat:0 }} days on average{% endif %}</span></div>
+    <div class="donut-row">{{ repair_donut }}{{ repair_legend }}</div>
+  </section>
+</div>
+
+<details class="panel">
+  <summary class="strong">How every figure is calculated</summary>
+  <ul class="ledger mt-4">
+    {% for m in rows %}
+    <li>
+      <div><h3>{{ m.name }}</h3><span class="small muted">{{ m.status }}</span></div>
+      <div class="ledger-value{% if m.value is None %} is-unknown{% endif %}">
+        {% if m.value is None %}{% if m.status == "Not applicable" %}Not applicable{% else %}Unknown{% endif %}
+        {% elif m.aed %}<small>AED</small> {{ m.value|floatformat:"2g" }}
+        {% else %}{{ m.value|floatformat:"-1" }}<small>{{ m.unit }}</small>{% endif %}
+      </div>
+      <div class="formula" style="grid-column:1/-1">
+        <dl class="facts-list">
+          <dt>Formula</dt><dd>{{ m.formula }}</dd>
+          <dt>Inputs</dt><dd>{{ m.inputs }}</dd>
+          <dt>Version</dt><dd>Calculation {{ version }}</dd>
+          {% if m.note %}<dt>Note</dt><dd>{{ m.note }}</dd>{% endif %}
+        </dl>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</details>
+<p class="xsmall faint mt-4">Figures in this environment come from labelled synthetic records.</p>
+{% endblock %}

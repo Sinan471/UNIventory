@@ -1,1 +1,12 @@
-{% extends "shared/base.html" %}{% block title %}Resolve discrepancy{% endblock %}{% block content %}<h1>Resolve a discrepancy</h1><p>Consignment {{ consignment.pk }}: {{ consignment.quantity }} units dispatched. A returned unit is sent for inspection; a lost unit is not made available.</p>{% if domain_error %}<p role="alert">{{ domain_error.message }}</p>{% endif %}<form method="post">{% csrf_token %}{{ form.as_p }}<button class="button button-primary">Record resolution</button></form>{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Resolve a discrepancy{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'transfer:queue' %}">Transfers</a><span class="sep">/</span><a href="{% url 'transfer:detail' consignment.reservation_id %}">Case {{ consignment.reservation_id }}</a><span class="sep">/</span><span>Discrepancy</span></nav>
+<div class="page-head"><div><h1>Resolve a discrepancy</h1>
+<p>{{ consignment.quantity|qty }} units were dispatched. A returned unit goes back to inspection before it can be offered again; a lost unit never becomes available.</p></div></div>
+{% if domain_error %}<div class="alert alert-error" role="alert">{% icon "alert" %}<div>{{ domain_error.message }}</div></div>{% endif %}
+<form method="post" class="decision form-narrow">{% csrf_token %}
+  <div class="decision-head">{% icon "return" %}<h2>Return or loss</h2></div>
+  <div class="decision-body plain-form">{{ form.as_p }}<button class="btn btn-primary" type="submit">Record resolution</button></div>
+</form>
+{% endblock %}

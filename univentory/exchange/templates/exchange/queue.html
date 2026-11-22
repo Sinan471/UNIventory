@@ -1,2 +1,41 @@
-{% extends "shared/base.html" %}{% block title %}Reservations and transfers{% endblock %}{% block content %}
-<h1>Reservations and transfers</h1><p>Cases you can review or take part in.</p>{% if rows %}<ul>{% for row in rows %}<li><a href="{% url 'transfer:detail' row.pk %}">{{ row.listing.title }} — {{ row.quantity }}</a> ({{ row.get_state_display }})</li>{% endfor %}</ul>{% else %}<p>No reservations yet.</p>{% endif %}{% endblock %}
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Transfers{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Reservations and transfers</h1>
+  <p>Hold, approve, dispatch, receive.</p></div>
+</div>
+
+<h2 class="section-title">Waiting on you{% if show %} <a class="btn btn-ghost btn-sm" href="{% url 'transfer:queue' %}">Show all</a>{% endif %}</h2>
+{% if mine %}
+<div class="table-wrap mb-5">
+  <table class="data">
+    <thead><tr><th>Item</th><th>From</th><th>To</th><th class="num">Quantity</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for row in mine %}
+      <tr><td><div class="with-thumb"><span class="thumb-sm"><img src="{% item_art row.listing %}" alt="" width="160" height="120" loading="lazy"></span><div><a class="row-title" href="{% url 'transfer:detail' row.pk %}">{{ row.listing.title }}</a><br><span class="xsmall faint">For: {{ row.request.title }}</span></div></div></td>
+        <td>{{ row.listing.department.name }}</td><td>{{ row.request.department.name }}</td><td class="num">{{ row.quantity|qty }}</td>
+        <td>{% status_badge row.status_value row.status_label %}</td>
+        <td><a class="btn btn-primary btn-sm" href="{% url 'transfer:detail' row.pk %}">{{ row.action_label }}</a></td></tr>
+    {% endfor %}</tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty empty-inline mb-5">Nothing needs your action right now.</div>
+{% endif %}
+
+<h2 class="section-title">Other cases you can see</h2>
+{% if others %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Item</th><th>From</th><th>To</th><th class="num">Quantity</th><th>Status</th><th>Next step</th></tr></thead>
+    <tbody>{% for row in others %}
+      <tr><td><div class="with-thumb"><span class="thumb-sm"><img src="{% item_art row.listing %}" alt="" width="160" height="120" loading="lazy"></span><div><a class="row-title" href="{% url 'transfer:detail' row.pk %}">{{ row.listing.title }}</a><br><span class="xsmall faint">For: {{ row.request.title }}</span></div></div></td>
+        <td>{{ row.listing.department.name }}</td><td>{{ row.request.department.name }}</td><td class="num">{{ row.quantity|qty }}</td>
+        <td>{% status_badge row.status_value row.status_label %}</td><td class="small muted">{{ row.next_step|default:"Closed" }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty empty-inline">No other reservations are visible to you.</div>
+{% endif %}
+{% endblock %}

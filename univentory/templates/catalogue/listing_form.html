@@ -4,7 +4,7 @@
 <nav class="breadcrumb"><a href="{% url 'inventory:my_assets' %}">{% trans "My Assets" %}</a> / <a href="{% url 'inventory:asset_detail' asset.pk %}">{{ asset.asset_code }}</a> / {% if listing %}{% trans "Edit listing" %}{% else %}{% trans "Prepare listing" %}{% endif %}</nav>
 <div class="page-head">
   <div><h1>{% if listing %}{% trans "Edit listing" %}{% else %}{% trans "Prepare a listing" %}{% endif %}</h1>
-    <span class="muted">{{ asset.title }} · {% blocktrans with n=releasable|qty:asset unit=asset.get_unit_display %}{{ n }} {{ unit }} unclaimed in use or available{% endblocktrans %}</span></div>
+    <span class="muted">{{ asset.title }}, {% blocktrans with n=releasable|qty:asset unit=asset.get_unit_display %}{{ n }} {{ unit }} unclaimed in use or available{% endblocktrans %}</span></div>
 </div>
 {% include "shared/components/form_errors.html" %}
 <form method="post" novalidate>

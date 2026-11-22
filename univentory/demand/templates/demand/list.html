@@ -1,8 +1,30 @@
-{% extends "shared/base.html" %}
+{% extends "shared/base.html" %}{% load ui %}
 {% block title %}My requests{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>My requests</h1><p>Track the needs you have recorded.</p></div><a class="button button-primary" href="{% url 'demand:new' %}">New request</a></div>
-{% if items %}<div class="table-wrap"><table><thead><tr><th>Request</th><th>Department</th><th>Quantity</th><th>Status</th><th>Created</th></tr></thead><tbody>
-{% for item in items %}<tr><td><a href="{% url 'demand:detail' item.pk %}">{{ item.title }}</a></td><td>{{ item.department }}</td><td>{{ item.quantity }}</td><td>{{ item.get_state_display }}</td><td>{{ item.created_at|date:"d M Y" }}</td></tr>{% endfor %}
-</tbody></table></div>{% else %}<p>You have no requests yet.</p>{% endif %}
+<div class="page-head">
+  <div><h1>My requests</h1><p>Your department's needs and where each one stands.</p></div>
+  <a class="btn btn-primary" href="{% url 'demand:new' %}">{% icon "plus" %} New request</a>
+</div>
+{% if items %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Request</th><th>Department</th><th class="num">Quantity</th><th class="num">Received</th><th>Status</th><th>Needed by</th></tr></thead>
+    <tbody>
+    {% for item in items %}
+      <tr>
+        <td><div class="with-thumb"><span class="thumb-sm"><img src="{% if item.listing %}{% item_art item.listing %}{% else %}{% item_art item.title %}{% endif %}" alt="" width="160" height="120" loading="lazy"></span><div><a class="row-title" href="{% url 'demand:detail' item.pk %}">{{ item.title }}</a>{% if item.urgent %} <span class="badge badge-danger">Urgent</span>{% endif %}<br><span class="xsmall faint">Created {{ item.created_at|date:"j M Y" }}</span></div></div></td>
+        <td>{{ item.department.name }}</td>
+        <td class="num">{{ item.quantity|qty }}</td>
+        <td class="num">{{ item.accepted_quantity|qty }}</td>
+        <td>{% status_badge item.state item.get_state_display %}</td>
+        <td class="date">{{ item.needed_by|date:"j M Y"|default:"Not set" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{% url 'demand:new' as new_url %}
+{% include "shared/components/empty_state.html" with heading="No requests yet" body="Record what your department needs. Your department representative reviews it before anything is reserved." action_url=new_url action_label="Record a need" %}
+{% endif %}
 {% endblock %}

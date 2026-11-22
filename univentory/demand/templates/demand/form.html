@@ -1,12 +1,22 @@
-{% extends "shared/base.html" %}
+{% extends "shared/base.html" %}{% load ui %}
 {% block title %}{% if item %}Edit request{% else %}New request{% endif %}{% endblock %}
 {% block content %}
-<nav class="breadcrumb"><a href="{% url 'demand:list' %}">My requests</a> / {% if item %}Edit{% else %}New{% endif %}</nav>
-<div class="page-head"><div><h1>{% if item %}Edit request{% else %}Record a need{% endif %}</h1><p>Submitting a request does not reserve an item.</p></div></div>
-{% if listing %}<p>Related listing: {{ listing.title }}</p>{% endif %}
-{% if domain_error %}<div class="alert alert-error" role="alert">{{ domain_error.message }}</div>{% endif %}
-<form method="post" novalidate>{% csrf_token %}{{ form.version }}{{ form.operation_key }}
-<fieldset class="fieldset-card"><legend>Request details</legend><div class="form-grid">{% for field in form.visible_fields %}{% include "shared/components/field.html" %}{% endfor %}</div></fieldset>
-<button class="button" type="submit" name="action" value="draft">Save draft</button> <button class="button button-primary" type="submit" name="action" value="submit">Submit for approval</button>
+<nav class="breadcrumb"><a href="{% url 'demand:list' %}">My requests</a><span class="sep">/</span><span>{% if item %}Edit{% else %}New{% endif %}</span></nav>
+<div class="page-head">
+  <div><h1>{% if item %}Edit request{% else %}Record a need{% endif %}</h1>
+  <p>Describe what your department needs. Your department representative approves it before anything can be reserved.</p></div>
+</div>
+{% if listing %}
+<div class="alert alert-info">{% icon "tag" %}<div>You are asking for <strong>{{ listing.title }}</strong> from {{ listing.department.name }}. Approval of this request is the first step; stock is held only after the owning department approves a reservation.</div></div>
+{% endif %}
+{% include "shared/components/form_errors.html" %}
+<form method="post" novalidate class="form-wide">{% csrf_token %}{{ form.version }}{{ form.operation_key }}
+  <fieldset class="fieldset-card"><legend>Request details</legend>
+    <div class="form-grid">{% for field in form.visible_fields %}{% if field.name == 'purpose' or field.name == 'specifications' or field.name == 'urgent_reason' %}{% include "shared/components/field.html" with span=True %}{% else %}{% include "shared/components/field.html" %}{% endif %}{% endfor %}</div>
+  </fieldset>
+  <div class="form-actions">
+    <button class="btn btn-secondary" type="submit" name="action" value="draft">Save draft</button>
+    <button class="btn btn-primary" type="submit" name="action" value="submit">{% icon "send" %} Submit for approval</button>
+  </div>
 </form>
 {% endblock %}

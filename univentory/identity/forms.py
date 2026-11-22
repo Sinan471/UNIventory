@@ -101,3 +101,53 @@ class PersonSearchForm(forms.Form):
 
 def dev_users():
     return AppUser.objects.filter(identity_issuer="dev-test", is_active=True).order_by("display_name")
+
+
+# Persona groups for the DEBUG-only development sign-in panel. The order
+# follows the life of a request so a demo can be run top to bottom.
+_PERSONA_GROUPS = [
+    ("Requester", ["REQUESTER"]),
+    ("Asset custodian", ["CUSTODIAN"]),
+    ("Department representative", ["DEPT_REP", "APPROVER"]),
+    ("Maintenance", ["MAINTENANCE"]),
+    ("Impact and reports", ["SUSTAINABILITY", "PROCUREMENT", "FINANCE", "MANAGEMENT", "REPORT_PUBLISHER"]),
+    ("Auditor", ["AUDITOR"]),
+    ("Administrator", ["SYSADMIN", "CAMPUS_USER"]),
+]
+_PERSONA_JOBS = {
+    "Requester": "Asks for items and confirms deliveries",
+    "Asset custodian": "Lists, dispatches and looks after items",
+    "Department representative": "Approves needs, holds and transfers",
+    "Maintenance": "Inspects and repairs items",
+    "Impact and reports": "Sustainability, savings and reports",
+    "Auditor": "Reads the audit trail",
+    "Administrator": "People, roles and reference data",
+    "No role yet": "Signed in, but sees nothing (access check)",
+}
+
+
+def dev_personas():
+    """Group development accounts by their main role for the sign-in page."""
+    from collections import OrderedDict
+
+    from identity.models import Role, UserRole
+
+    names = dict(Role.objects.values_list("code", "name"))
+    grants: dict[int, list] = {}
+    for user_id, code, dept in UserRole.objects.active().values_list("user_id", "role__code", "department__code"):
+        grants.setdefault(user_id, []).append((code, dept))
+    groups = OrderedDict((label, []) for label, _ in _PERSONA_GROUPS)
+    groups["No role yet"] = []
+    for user in dev_users():
+        mine = grants.get(user.pk, [])
+        codes = [code for code, _ in mine]
+        label = next((g for g, roles in _PERSONA_GROUPS if any(c in roles for c in codes)), "No role yet")
+        by_role: dict[str, list] = {}
+        for code, dept in mine:
+            by_role.setdefault(names.get(code, code), [])
+            if dept and dept not in by_role[names.get(code, code)]:
+                by_role[names.get(code, code)].append(dept)
+        summary = [f"{role} ({', '.join(sorted(d))})" if d else role for role, d in by_role.items()]
+        name = user.display_name.split(" (")[0]
+        groups[label].append({"user": user, "name": name, "summary": _PERSONA_JOBS.get(label, ", ".join(summary))})
+    return [(label, people) for label, people in groups.items() if people]

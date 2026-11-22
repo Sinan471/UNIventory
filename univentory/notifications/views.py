@@ -7,7 +7,14 @@ from .models import Notification
 
 @active_role_required
 def list_notifications(request):
-    return render(request, "notifications/list.html", {"items": Notification.objects.filter(recipient=request.user)})
+    """FR-53: per-user read state with an unread filter."""
+    mine = Notification.objects.filter(recipient=request.user)
+    unread_only = request.GET.get("filter") == "unread"
+    items = mine.filter(read_at__isnull=True) if unread_only else mine
+    return render(request, "notifications/list.html", {
+        "items": items[:200], "unread_only": unread_only,
+        "unread_count": mine.filter(read_at__isnull=True).count(), "nav_current": "notifications",
+    })
 
 
 @require_POST
@@ -17,4 +24,11 @@ def mark_read(request, pk):
     if row.read_at is None:
         row.read_at = timezone.now()
         row.save(update_fields=["read_at"])
+    return redirect("notifications:list")
+
+
+@require_POST
+@active_role_required
+def mark_all_read(request):
+    Notification.objects.filter(recipient=request.user, read_at__isnull=True).update(read_at=timezone.now())
     return redirect("notifications:list")

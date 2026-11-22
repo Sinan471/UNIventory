@@ -1,0 +1,49 @@
+{% load ui %}{% if show %}
+<section class="panel" aria-labelledby="matches-h">
+  <div class="panel-head">
+    <h2 id="matches-h">{% icon "sparkle" %} Suggested items</h2>
+    <span class="ai-note" title="Rule-based fallback; no live AI model is configured on this server">{% icon "sparkle" %} Assisted<span class="visually-hidden"> (rule-based, no live model)</span></span>
+    <p>Best matches for this need. The score ranks options; it is not a probability, and choosing one holds nothing.</p>
+  </div>
+  {% if error %}<div class="alert alert-warning">{% icon "alert" %}<div>{{ error }}</div></div>
+  {% elif not matches %}<p class="muted mb-0">No released item matches this need closely enough. <a href="{% url 'catalogue:exchange' %}">Search the exchange</a> or keep the request open for new listings.</p>
+  {% else %}
+  <ol class="worklist">
+    {% for m in matches %}
+    <li>
+      <div class="work-item match-item">
+        <div class="score" title="Weighted RP-1 score"><strong>{{ m.score|floatformat:0 }}</strong><span>/100</span></div>
+        <div>
+          <a class="work-title" href="{% url 'catalogue:listing_detail' m.listing_id %}">{{ m.title }}</a>
+          <div class="meta-row mt-0"><span>{% icon "map-pin" %} {{ m.department }}</span><span>{{ m.category }}</span><span><strong class="num">{{ m.free_quantity|qty }}</strong>&nbsp;free</span>{% if m.partial %}<span>{% tone_badge "attention" "Partial supply" %}</span>{% endif %}</div>
+          <details class="mt-2"><summary class="small">Why this rank ({{ m.evidence_status }}, {{ m.coverage }})</summary>
+            <ul class="factor-list mt-2">
+              {% for f in m.factor_rows %}
+              <li class="{% if f.value is None %}unknown{% endif %}"><span>{{ f.label }} <span class="faint">({{ f.weight }}%)</span></span>
+                <span class="factor-bar"><span style="width:{{ f.value|default:0 }}%"></span></span>
+                <span class="num">{% if f.value is None %}unknown{% else %}{{ f.value }}%{% endif %}</span></li>
+              {% endfor %}
+            </ul>
+            <p class="xsmall faint mt-2 mb-0">Unknown factors are left out of the weighted total rather than counted as zero. Ranking version {{ m.ranking_version }}.</p>
+          </details>
+        <div class="button-row mt-2">
+          {% if can_reserve %}
+          <form method="post" action="{% url 'ai:match_decide' need.pk %}">{% csrf_token %}
+            <input type="hidden" name="listing" value="{{ m.listing_id }}"><input type="hidden" name="decision" value="ACCEPTED">
+            <button class="btn btn-primary btn-sm" type="submit">Use this item</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{% url 'ai:match_decide' need.pk %}">{% csrf_token %}
+            <input type="hidden" name="listing" value="{{ m.listing_id }}"><input type="hidden" name="decision" value="REJECTED">
+            <button class="btn btn-ghost btn-sm" type="submit">Not suitable</button>
+          </form>
+        </div>
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% if not can_reserve %}<p class="small muted mt-4 mb-0">You can reserve a suggested item once your department representative approves this need.</p>{% endif %}
+  {% endif %}
+</section>
+{% endif %}

@@ -1,0 +1,76 @@
+{% extends "shared/base.html" %}{% load ui %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Reports</h1><p>Requests and transfers for your departments. CSV matches the table.</p></div>
+  <a class="btn btn-secondary" href="{% url 'reporting:export' %}?tab={{ tab }}&amp;{{ query }}">{% icon "download" %} Export CSV</a>
+</div>
+
+<div class="stats">
+  <div class="stat is-hero"><span class="stat-label">Requests</span><span class="stat-icon">{% icon "clipboard" %}</span><span class="stat-value">{{ summary.requests }}</span><span class="stat-foot"><span>{{ summary.open }} still open</span></span></div>
+  <div class="stat"><span class="stat-label">Consignments</span><span class="stat-icon">{% icon "truck" %}</span><span class="stat-value">{{ summary.transfers }}</span><span class="stat-foot"><span>Dispatched in the period</span></span></div>
+  <div class="stat tone-3"><span class="stat-label">Units accepted</span><span class="stat-icon">{% icon "inbox" %}</span><span class="stat-value">{{ summary.units }}<small>units</small></span><span class="stat-foot"><span>Confirmed by receivers</span></span></div>
+</div>
+<div class="dash">
+  <section class="panel chart-panel"><div class="panel-head"><h2>Volume by month</h2><span class="actions">Last 6 months</span></div>{{ summary.legend }}{{ summary.chart }}</section>
+  <section class="panel chart-panel"><div class="panel-head"><h2>Requests by status</h2></div>
+    <ul class="hbars">{% for st in summary.states %}<li><span>{{ st.name }}</span><span class="track"><span class="fill" style="width:{{ st.pct }}%"></span></span><strong>{{ st.value }}</strong></li>{% empty %}<li class="muted">No requests in this period.</li>{% endfor %}</ul>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="Report">
+  <a class="tab" href="?tab=requests&amp;{{ query }}" {% if tab == 'requests' %}aria-current="page"{% endif %}>{% icon "clipboard" %} Requests</a>
+  <a class="tab" href="?tab=transfers&amp;{{ query }}" {% if tab == 'transfers' %}aria-current="page"{% endif %}>{% icon "truck" %} Transfers</a>
+</nav>
+
+<form method="get" class="panel panel-tight mb-5">
+  <input type="hidden" name="tab" value="{{ tab }}">
+  <div class="filter-row">
+    <div class="field"><label for="f-from">From</label><input id="f-from" type="date" name="from" value="{{ f.start|date:'Y-m-d' }}"></div>
+    <div class="field"><label for="f-to">To</label><input id="f-to" type="date" name="to" value="{{ f.end|date:'Y-m-d' }}"></div>
+    <div class="field"><label for="f-dept">Department</label>
+      <select id="f-dept" name="department"><option value="">All I can see</option>{% for d in departments %}<option value="{{ d.pk }}" {% if f.department == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="f-state">Status</label>
+      <select id="f-state" name="state"><option value="">Any status</option>
+      {% if tab == 'requests' %}{% for value, label in request_states %}<option value="{{ value }}" {% if f.state == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      {% else %}{% for s in "Completed|Partially received|In transit"|split:"|" %}<option value="{{ s }}" {% if f.state == s %}selected{% endif %}>{{ s }}</option>{% endfor %}{% endif %}
+      </select></div>
+    <div class="button-row"><button class="btn btn-primary" type="submit">Apply</button><a class="btn btn-ghost" href="?tab={{ tab }}">Reset</a></div>
+  </div>
+</form>
+
+{% if tab == 'requests' %}
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Request</th><th>Department</th><th>Requester</th><th class="num">Quantity</th><th class="num">Accepted</th><th>Status</th><th>Created</th></tr></thead>
+      <tbody>{% for r in rows %}<tr><td class="strong">{{ r.title }}{% if r.urgent %} <span class="badge badge-danger">Urgent</span>{% endif %}</td><td>{{ r.department.name }}</td><td>{{ r.requester.display_name }}</td><td class="num">{{ r.quantity|qty }}</td><td class="num">{{ r.accepted_quantity|qty }}</td><td>{% status_badge r.state r.get_state_display %}</td><td class="date">{{ r.created_at|date:"j M Y" }}</td></tr>{% endfor %}</tbody>
+      <tfoot><tr><td colspan="3">{{ rows|length }} request{{ rows|length|pluralize }}</td><td class="num">{{ totals.requested|qty }}</td><td colspan="3"></td></tr></tfoot>
+    </table>
+  </div>
+  {% else %}<div class="empty"><h2>No requests in this period</h2><p class="muted">Widen the dates or clear the status filter.</p></div>{% endif %}
+{% else %}
+  {% if transfers %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Dispatched</th><th>Item</th><th>From</th><th>To</th><th class="num">Sent</th><th class="num">Accepted</th><th class="num">Returned or lost</th><th>Status</th></tr></thead>
+      <tbody>{% for t in transfers %}<tr><td class="date">{{ t.date|date:"j M Y" }}</td><td class="strong">{{ t.item }}</td><td>{{ t.source }}</td><td>{{ t.destination }}</td><td class="num">{{ t.dispatched|qty }}</td><td class="num">{{ t.accepted|qty }}</td><td class="num">{{ t.returned_or_lost|qty }}</td>
+        <td>{% if t.status == 'Completed' %}{% tone_badge "success" t.status %}{% elif t.status == 'In transit' %}{% tone_badge "info" t.status %}{% else %}{% tone_badge "attention" t.status %}{% endif %}</td></tr>{% endfor %}</tbody>
+      <tfoot><tr><td colspan="4">{{ transfers|length }} consignment{{ transfers|length|pluralize }}</td><td class="num">{{ totals.dispatched|qty }}</td><td class="num">{{ totals.accepted|qty }}</td><td colspan="2"></td></tr></tfoot>
+    </table>
+  </div>
+  {% else %}<div class="empty"><h2>No transfers in this period</h2><p class="muted">Widen the dates or clear the status filter.</p></div>{% endif %}
+{% endif %}
+
+<section class="mt-6">
+  <div class="panel-head"><h2>Report narratives</h2>
+    {% if can_publish %}<form method="post" action="{% url 'reporting:snapshot_create' %}?{{ query }}" class="actions">{% csrf_token %}<button class="btn btn-secondary btn-sm" type="submit">{% icon "sparkle" %} Draft a summary for this period</button></form>{% endif %}
+    <p>A summary is written from a saved snapshot of the figures. A person edits and publishes it; numbers that do not match the snapshot block publication.</p>
+  </div>
+  {% if snapshots %}
+  <ul class="worklist">
+    {% for s in snapshots %}<li><a class="work-item" href="{% url 'reporting:snapshot' s.pk %}"><span class="work-icon">{% icon "file" %}</span><span><span class="work-title">{{ s.title }}</span><span class="work-sub">Created {{ s.created_at|date:"j M Y, H:i" }}{% if s.department %} for {{ s.department.name }}{% endif %}</span></span><span>{% status_badge s.status s.get_status_display %}</span></a></li>{% endfor %}
+  </ul>
+  {% else %}<p class="muted small">No narratives yet.</p>{% endif %}
+</section>
+{% endblock %}

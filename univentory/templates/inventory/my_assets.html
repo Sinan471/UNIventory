@@ -2,7 +2,7 @@
 {% block title %}{% trans "My Assets" %}{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><span class="eyebrow">{% trans "Inventory work" %}</span><h1>{% trans "My Assets" %}</h1></div>
+  <div><h1>{% trans "My Assets" %}</h1><p>{% trans "Records you look after. Register items, keep evidence current and list surplus on the exchange once your department releases it." %}</p></div>
   {% if can_register %}<div class="actions"><a class="btn btn-primary" href="{% url 'inventory:asset_new' %}">{% icon "plus" %} {% trans "Register asset" %}</a></div>{% endif %}
 </div>
 
@@ -32,8 +32,9 @@
     {% for row in rows %}
       <tr>
         <td>
+          <div class="with-thumb"><span class="thumb-sm"><img src="{% item_art row.asset %}" alt="" width="160" height="120" loading="lazy"></span><div>
           <a class="row-title" href="{% url 'inventory:asset_detail' row.asset.pk %}">{{ row.asset.title }}</a>
-          <div class="small muted"><span class="asset-code">{{ row.asset.asset_code }}</span> · {{ row.asset.category }} · {{ row.asset.get_tracking_type_display }}</div>
+          <div class="flex wrap mt-2"><span class="asset-tag">{{ row.asset.asset_code }}</span><span class="small muted">{{ row.asset.category }}</span></div></div></div>
         </td>
         <td>{{ row.asset.location.name }}<div class="small muted">{{ row.asset.department.code }}</div></td>
         <td><div class="flex wrap">{% for s in row.states %}{% lifecycle_badge s %}{% empty %}{% trans "Draft" as l %}{% tone_badge "neutral" l %}{% endfor %}</div></td>

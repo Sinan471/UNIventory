@@ -20,6 +20,7 @@ from identity.forms import (
     LocationForm,
     PersonSearchForm,
     RevokeForm,
+    dev_personas,
     dev_users,
 )
 from identity.models import AppUser, Category, Department, Location, UserRole
@@ -49,6 +50,7 @@ def login_page(request):
             "sso_configured": oidc.configured,
             "dev_enabled": DevIdentityAdapter.enabled(),
             "dev_users": dev_users() if DevIdentityAdapter.enabled() else [],
+            "dev_personas": dev_personas() if DevIdentityAdapter.enabled() else [],
             "failure": request.GET.get("failure", ""),
         },
     )
@@ -98,7 +100,10 @@ def dev_login(request):
     adapter = DevIdentityAdapter()
     if not adapter.enabled():
         raise Http404()
-    user = get_object_or_404(AppUser, pk=request.POST.get("user_id"), identity_issuer=adapter.issuer)
+    user_id = request.POST.get("user_id", "")
+    if not user_id.isdigit():
+        raise Http404()
+    user = get_object_or_404(AppUser, pk=int(user_id), identity_issuer=adapter.issuer)
     try:
         identity = adapter.identity_for(user)
     except IdentityError as exc:

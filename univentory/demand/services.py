@@ -15,6 +15,12 @@ class DemandService:
             raise NotPermitted("You cannot submit requests for this department.")
         if data.get("urgent") and not (data.get("urgent_reason") or "").strip():
             raise ValidationFailed("Explain why this request is urgent.")
+        from django.utils import timezone
+        if data.get("needed_by") and data["needed_by"] < timezone.localdate():
+            raise ValidationFailed("The required date cannot be in the past.")
+        destination = data.get("destination")
+        if destination is not None and destination.department_id != getattr(department, "pk", department):
+            raise ValidationFailed("The destination must be a location in the requesting department.")
         payload = {k: getattr(v, "pk", v) for k, v in data.items() if k not in ("version", "operation_key")}
         payload.update(request_id=request_id, expected_version=expected_version, listing_id=getattr(listing, "pk", None), submit=submit)
         digest = ActorContext.payload_hash(payload)
