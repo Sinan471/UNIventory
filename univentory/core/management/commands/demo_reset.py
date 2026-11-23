@@ -61,6 +61,19 @@ STAFF = [
     ("lina.haddad", "Lina Haddad", [("MAINTENANCE", "MECH"), ("MAINTENANCE", "CHEM"), ("MAINTENANCE", "FAC")]),
 ]
 
+# Fresh items for repeat end-to-end runs (see DEMO_GUIDE.md, "Practice runs").
+PRACTICE_RUNS = [
+    ("mariam.custodian", "FAC", "FURN", "MC-H-OFF", "Herman Miller Sayl office chairs",
+     "Mesh-back task chairs with adjustable arms, from the H-block office refit.", 6, 950,
+     {"adjustable": True, "height_cm": "104"}),
+    ("mariam.custodian", "FAC", "AV", "MC-H-OFF", "Jabra Speak 750 conference speakerphones",
+     "USB and Bluetooth speakerphones for small meeting rooms, boxed with cables.", 4, 1100,
+     {}),
+    ("mariam.custodian", "MECH", "LAB", "MC-A-101", "Ohaus Pioneer precision balances",
+     "0.01 g top-loading balances with calibration weights, checked in October.", 4, 3200,
+     {"model": "PX4202", "power_w": 12, "calibrated": True}),
+]
+
 
 class Command(BaseCommand):
     help = "Wipe the local SQLite database and rebuild the staged demonstration (DEBUG only)."
@@ -401,6 +414,13 @@ class Command(BaseCommand):
         self._asset("mariam.custodian", "MECH", "IT", "MC-A-101", "Lenovo ThinkPad T14 laptops",
                     "Teaching-lab laptops, batteries tested in October.", 5, value=2400,
                     specs={"ram_gb": 16, "storage_gb": 512, "cpu": "Ryzen 5 PRO"})
+
+        # Practice runs: registered and safety-cleared but not yet listed, so the
+        # whole exchange (list, release, publish, request, approve, hold, transfer,
+        # dispatch, receive) can be shown end to end more than once. Each sits in a
+        # department other than Chemistry so Sara can request it.
+        for custodian, dept, cat, loc, title, description, qty, value, specs in PRACTICE_RUNS:
+            self._asset(custodian, dept, cat, loc, title, description, qty, value=value, specs=specs)
 
         # Care: a defect for Rashid, spend for Khalid, a repair for Rashid to verify, and history.
         hotplate = self._asset("mariam.custodian", "MECH", "LAB", "MC-A-101", "Magnetic stirrer hotplate",

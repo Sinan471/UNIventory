@@ -75,7 +75,38 @@ spend ──► Rashid repairs ──► a different technician verifies.
 9. **Reem.** **Impact**: reused units, avoided purchases, net savings, carbon estimate, monthly trend, diversion donut, repair outcomes; open *How every figure is calculated*. **Reports**: volume chart, CSV export, **Draft a summary** ▸ add a wrong number ▸ **Publish** is blocked ▸ fix ▸ publish.
 10. **Salma** ▸ Audit history. **Tariq** ▸ no access anywhere.
 
-## 6. Talking points
+## 6. Practice runs: the full workflow, three more times
+
+Three extra items are registered and safety-cleared after every reset but
+**not yet listed**, so each can go through the whole exchange from the very
+first step. They follow exactly the same workflow; only the details change.
+
+| Run | Item (My Assets) | From | Stock | Sara asks for | Request title | Purpose |
+|---|---|---|---|---|---|---|
+| 1 | Herman Miller Sayl office chairs | Facilities | 6 | 2 | `Task chairs for the C-210 write-up desks` | `Replace two broken chairs at the write-up desks` |
+| 2 | Jabra Speak 750 conference speakerphones | Facilities | 4 | 1 | `Speakerphone for the group meeting room` | `Hybrid group meetings with external collaborators` |
+| 3 | Ohaus Pioneer precision balances | Mechanical Engineering | 4 | 2 | `Top-loading balances for the teaching lab` | `Two more weighing stations for first-year practicals` |
+
+**The workflow (same for every run):**
+
+1. **Mariam** ▸ My Assets ▸ open the item ▸ **Prepare listing** ▸ **Save draft** ▸ **Submit for release review**.
+2. **Khalid** ▸ Workbench card *Listings to release* ▸ choose **Approve release** ▸ **Record decision**.
+3. **Mariam** ▸ Workbench card *Ready to publish* ▸ **Publish to the exchange**.
+4. **Sara** ▸ Exchange ▸ category tile ▸ the item ▸ **Request this item** ▸ title, quantity and purpose from the table, *Needed by* two weeks ahead, *Deliver to* a Chemistry location ▸ **Submit for approval**.
+5. **Khalid** ▸ Workbench card *Needs to approve* ▸ **Approve need**.
+6. **Sara** ▸ My Requests ▸ the request ▸ **Request a reservation** ▸ same quantity ▸ **Send for hold approval**.
+7. **Khalid** ▸ Transfers ▸ the case ▸ **Approve hold**, then **Approve transfer**.
+8. **Mariam** ▸ Workbench card *Ready to dispatch* ▸ **Dispatch**: same quantity, receiver Sara, a Chemistry location, custodian Mariam ▸ **Confirm dispatch**.
+9. **Sara** ▸ Workbench card *Deliveries to confirm* ▸ **Confirm receipt** (same quantity). The request shows **Fulfilled**.
+
+Tips: do one run end to end first, then do runs 2 and 3 side by side (one
+step for each item before moving on) to show several requests moving at once.
+For an AI variation on run 3, open the request after step 5 and use
+**Suggested items** ▸ **Use this item** instead of *Request a reservation*.
+Every run lands on Impact, Reports and Audit history. Run `demo_reset --yes`
+to get all three back.
+
+## 7. Talking points
 
 * **Independence.** Nobody approves their own request; administrators have no approval power. The server enforces it, not hidden buttons.
 * **Stock integrity.** A hold is only granted after a fresh stock check; twenty competing approvals for the last unit produce one hold. A repeated receipt has no second effect.
@@ -83,7 +114,7 @@ spend ──► Rashid repairs ──► a different technician verifies.
 * **Evidence-based impact.** Every figure opens its formula and inputs; missing evidence is Unknown, never zero.
 * **AI as assistance.** Matching, advice, the assistant and report drafting suggest; people decide. Suggestions marked *Assisted* run on the documented rule-based fallback because no live model is configured.
 
-## 7. Honest limits
+## 8. Honest limits
 
 * KU SSO is built but needs KU's client registration.
 * No live AI model is configured (see above).
