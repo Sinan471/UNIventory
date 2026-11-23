@@ -334,21 +334,14 @@ class Command(BaseCommand):
                 made += 1
         return made
 
-    @transaction.atomic
-    def _stage(self):
-        import random
 
+    # ------------------------------------------------------------------
+    # The live scenarios the demo script walks through. demo_reset stages them
+    # once; demo_add_round stages them again on top of an existing database so
+    # the same script can be rehearsed or presented more than once.
+    # ------------------------------------------------------------------
+    def _live_scenarios(self):
         from care.services import CareService
-        from final_actions.services import FinalActionService
-        from inventory.models import Lifecycle
-        from sustainability.models import (CohortOutcome, CostEntry, EmissionFactor, LifeExtensionEvidence,
-                                           UnwantedCohort)
-
-        rng = random.Random(2026)
-        today = timezone.localdate()
-
-        # History first, so live scenarios start from a realistic six-month record.
-        history = self._history(rng)
 
         # Partial delivery: 6 monitors sent to Sara, 4 confirmed, 2 still to confirm.
         monitors = self._asset("mariam.custodian", "MECH", "IT", "MC-A-STORE", "Dell 24-inch monitors P2422H",
@@ -442,6 +435,36 @@ class Command(BaseCommand):
         case = CareService.approve_work(self.u["khalid.rep"], case.pk, case.version)
         CareService.finish_work(self.u["lina.haddad"], case.pk, case.version, "Cable replaced, firmware 2.4 installed.")
 
+    def _recycling_proposal(self):
+        from final_actions.services import FinalActionService
+        from inventory.models import Lifecycle
+        from sustainability.models import UnwantedCohort
+
+        stack = self._asset("mariam.custodian", "MECH", "FURN", "MC-A-STORE", "Cracked stacking chairs",
+                            "Polypropylene shells cracked; frames reusable as scrap steel.", 3, condition="POOR", value=None)
+        UnwantedCohort.objects.create(asset=stack, portion=self._portion(stack), quantity=3,
+                                      evidence_reference="SYN-SURPLUS-MECH-12", recorded_by=self.u["mariam.custodian"])
+        FinalActionService.propose(self.u["mariam.custodian"], self._portion(stack).pk, 3, Lifecycle.RECYCLED,
+                                   "Shells cannot be repaired; send frames for metal recycling.")
+
+    @transaction.atomic
+    def _stage(self):
+        import random
+
+        from care.services import CareService
+        from final_actions.services import FinalActionService
+        from inventory.models import Lifecycle
+        from sustainability.models import (CohortOutcome, CostEntry, EmissionFactor, LifeExtensionEvidence,
+                                           UnwantedCohort)
+
+        rng = random.Random(2026)
+        today = timezone.localdate()
+
+        # History first, so live scenarios start from a realistic six-month record.
+        history = self._history(rng)
+
+        self._live_scenarios()
+
         repairs = [("Epson projector, lecture room A-012", "AV", True, 480), ("Analytical balance AX224, bench 4", "LAB", False, 260),
                    ("Ergonomic chair, office H-14", "FURN", True, 90), ("Dell Latitude 7420 laptop, A-101", "IT", True, 210)]
         for i, (title, cat, ok, cost) in enumerate(repairs):
@@ -486,12 +509,7 @@ class Command(BaseCommand):
                                                 evidence_reference="SYN-SURPLUS-FAC-11", recorded_by=self.u["mariam.custodian"])
         CohortOutcome.objects.create(cohort=cohort3, outcome=CohortOutcome.Outcome.REUSE, quantity=6,
                                      evidence_reference="SYN-REUSE-FAC-11", recorded_by=self.u["mariam.custodian"])
-        stack = self._asset("mariam.custodian", "MECH", "FURN", "MC-A-STORE", "Cracked stacking chairs",
-                            "Polypropylene shells cracked; frames reusable as scrap steel.", 3, condition="POOR", value=None)
-        UnwantedCohort.objects.create(asset=stack, portion=self._portion(stack), quantity=3,
-                                      evidence_reference="SYN-SURPLUS-MECH-12", recorded_by=self.u["mariam.custodian"])
-        FinalActionService.propose(self.u["mariam.custodian"], self._portion(stack).pk, 3, Lifecycle.RECYCLED,
-                                   "Shells cannot be repaired; send frames for metal recycling.")
+        self._recycling_proposal()
 
         for activity, name, kg, unit in [
             ("replacement:FURN", "New office chair, cradle-to-gate", "72.0", "unit"),

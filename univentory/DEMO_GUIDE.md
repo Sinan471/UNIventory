@@ -21,6 +21,20 @@ in the top bar switches to light and remembers the choice.
 Run `demo_reset --yes` before each rehearsal. It only runs with
 `DJANGO_DEBUG=true` and SQLite.
 
+Already used the staged work and want to run the script again **without
+wiping** what you did? Add a fresh copy of every staged scenario (desks to
+publish, drills to release, centrifuge hold, microscope transfer, monitors
+to confirm, whiteboards to dispatch, hotplate, balance spend, camera repair
+to verify, recycling proposal and the three practice items):
+
+```bash
+.venv/Scripts/python manage.py demo_add_round              # one more round
+.venv/Scripts/python manage.py demo_add_round --rounds 2   # two more
+```
+
+Earlier records stay, so Impact, Reports and Audit keep growing. Workbench
+cards show only work that is still waiting, so the script reads the same.
+
 ## 2. The cast: one person per job
 
 | Person | Job | What they do in the demo |
